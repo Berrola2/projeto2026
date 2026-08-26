@@ -2,7 +2,7 @@
  * ==========================================================================
  * SISTEMA DE GESTÃO DE AULAS DE VÔLEI DE PRAIA
  * Roteador de Telas (SPA), Navegação, Modais e Renderização
- * Suporte a Geração Automática de E-mail e Isolamento por Arena
+ * Suporte a Geração Automática de E-mail, Modalidades e Gestão de Professores
  * ==========================================================================
  */
 
@@ -127,6 +127,9 @@ const App = {
     }
   },
 
+  // ----------------------------------------------------
+  // CABEÇALHO & BARRA INFERIOR COM VISUAL PREMIUM
+  // ----------------------------------------------------
   renderNav() {
     const user = window.store.getCurrentUser();
     const headerNav = document.getElementById('headerNavDesktop');
@@ -140,8 +143,9 @@ const App = {
 
     const arenaObj = window.store.getArenaById(user.arenaId);
     const arenaName = arenaObj ? arenaObj.name : 'Vôlei de Praia';
+    const initial = user.name ? user.name.trim().charAt(0).toUpperCase() : 'U';
 
-    // 1. Navegação Desktop
+    // 1. Navegação Desktop (com badge ultra-elegante)
     if (headerNav) {
       if (user.role === 'PROFESSOR') {
         headerNav.innerHTML = `
@@ -155,10 +159,13 @@ const App = {
             <span>📅</span> Fechamento
           </button>
           <div class="user-badge-header">
-            <span>👤 ${user.name}</span>
-            <span style="font-size:0.75rem; color:#fde047; font-weight:700;">📍 ${arenaName}</span>
+            <div class="user-badge-avatar">${initial}</div>
+            <div class="user-badge-text">
+              <span>${user.name}</span>
+            </div>
+            <span class="user-badge-arena-tag">📍 ${arenaName}</span>
             <span class="role-pill role-pill-professor">Professor</span>
-            <button onclick="App.handleLogout()" title="Sair" style="background:none; border:none; color:#cbd5e1; cursor:pointer; font-size:1.1rem; margin-left:0.35rem;">🚪</button>
+            <button class="user-badge-logout" onclick="App.handleLogout()" title="Sair do Sistema">🚪</button>
           </div>
         `;
       } else {
@@ -182,10 +189,13 @@ const App = {
             <span>🗓️</span> Calendário
           </button>
           <div class="user-badge-header">
-            <span>🛡️ ${user.name}</span>
-            <span style="font-size:0.75rem; color:#7dd3fc; font-weight:700;">📍 ${arenaName}</span>
+            <div class="user-badge-avatar" style="background: linear-gradient(135deg, #0284c7, #0369a1);">${initial}</div>
+            <div class="user-badge-text">
+              <span>${user.name}</span>
+            </div>
+            <span class="user-badge-arena-tag">📍 ${arenaName}</span>
             <span class="role-pill role-pill-admin">Gestor</span>
-            <button onclick="App.handleLogout()" title="Sair" style="background:none; border:none; color:#cbd5e1; cursor:pointer; font-size:1.1rem; margin-left:0.35rem;">🚪</button>
+            <button class="user-badge-logout" onclick="App.handleLogout()" title="Sair do Sistema">🚪</button>
           </div>
         `;
       }
@@ -230,6 +240,10 @@ const App = {
             <span class="icon">👥</span>
             <span>Alunos</span>
           </a>
+          <a class="bottom-nav-item ${this.currentRoute === '#/professores' ? 'active' : ''}" onclick="App.navigate('#/professores')">
+            <span class="icon">👨‍🏫</span>
+            <span>Professores</span>
+          </a>
           <a class="bottom-nav-item" onclick="App.handleLogout()">
             <span class="icon">🚪</span>
             <span>Sair</span>
@@ -240,7 +254,7 @@ const App = {
   },
 
   // ----------------------------------------------------
-  // LOGIN COM E-MAILS NO PADRÃO (nome).(arena)@(funcao).com
+  // LOGIN
   // ----------------------------------------------------
   renderLogin() {
     const container = document.getElementById('loginView');
@@ -348,7 +362,7 @@ const App = {
   },
 
   // ----------------------------------------------------
-  // CADASTRO COM GERAÇÃO AUTOMÁTICA DE E-MAIL EM TEMPO REAL
+  // CADASTRO PÚBLICO
   // ----------------------------------------------------
   renderRegister() {
     const container = document.getElementById('registerView');
@@ -367,7 +381,6 @@ const App = {
         <div class="card" style="padding: 1.85rem; border-radius: 22px; box-shadow: var(--shadow-lg);">
           <form onsubmit="App.handleRegister(event)">
             
-            <!-- 1. NOME -->
             <div class="form-group">
               <label for="regName" class="form-label">Nome Completo *</label>
               <input 
@@ -380,7 +393,6 @@ const App = {
               >
             </div>
 
-            <!-- 2. ARENA -->
             <div class="form-group">
               <label for="regArena" class="form-label">Arena de Vôlei *</label>
               <select 
@@ -394,7 +406,6 @@ const App = {
               </select>
             </div>
 
-            <!-- 3. FUNÇÃO / CAIXA DE SELEÇÃO -->
             <div class="form-group">
               <label for="regRole" class="form-label">Função na Arena *</label>
               <select 
@@ -409,7 +420,6 @@ const App = {
               </select>
             </div>
 
-            <!-- 4. E-MAIL GERADO AUTOMATICAMENTE -->
             <div class="form-group" style="background: #f0fdf4; border: 2px dashed #86efac; padding: 1rem; border-radius: var(--radius-md);">
               <label for="regEmail" class="form-label" style="color: #166534;">
                 ⚡ E-mail / Login Gerado Automaticamente:
@@ -428,13 +438,11 @@ const App = {
               </div>
             </div>
 
-            <!-- 5. TELEFONE -->
             <div class="form-group">
               <label for="regPhone" class="form-label">Telefone / WhatsApp</label>
               <input type="tel" id="regPhone" class="form-control" placeholder="(21) 99999-9999">
             </div>
 
-            <!-- 6. SENHAS -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
               <div class="form-group">
                 <label for="regPassword" class="form-label">Senha *</label>
@@ -509,7 +517,213 @@ const App = {
   },
 
   // ----------------------------------------------------
-  // PAINEL DO PROFESSOR (COM ISOLAMENTO)
+  // GESTÃO DE PROFESSORES: MODALIDADES, SENHA INICIAL & DEMISSÃO
+  // ----------------------------------------------------
+  renderProfessores() {
+    const container = document.getElementById('professoresView');
+    if (!container) return;
+
+    const user = window.store.getCurrentUser();
+    const professors = window.store.getProfessors();
+    const arena = window.store.getArenaById(user.arenaId);
+    const arenaName = arena ? arena.name : 'Arena';
+
+    container.innerHTML = `
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+          <div>
+            <span style="font-size: 0.85rem; font-weight: 800; color: #0284c7; text-transform: uppercase;">
+              Corpo Docente da ${arenaName}
+            </span>
+            <h1 style="font-size: 1.85rem; color: var(--primary-deep); margin-top: 0.15rem;">
+              Professores da Arena 👨‍🏫
+            </h1>
+            <p style="color: var(--text-muted); font-size: 0.95rem;">
+              Controle de modalidades, senhas iniciais e gestão do corpo docente da <strong>${arenaName}</strong>.
+            </p>
+          </div>
+
+          <button class="btn btn-sand" onclick="App.openNewProfModal()">
+            <span>➕</span> Cadastrar Novo Professor
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Nome do Professor</th>
+                  <th>Modalidade</th>
+                  <th>Login (@prof.com)</th>
+                  <th>Telefone</th>
+                  <th>Aulas Dadas</th>
+                  <th class="text-center">Ações / Credenciais</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${professors.length > 0 ? professors.map(p => {
+                  const clsCount = window.store.state.classes.filter(c => c.professorId === p.id && c.arenaId === user.arenaId).length;
+                  const initial = p.name ? p.name.charAt(0).toUpperCase() : 'P';
+                  const modality = p.modality || 'Vôlei de Praia 🏐';
+
+                  return `
+                    <tr>
+                      <td class="font-bold">
+                        <div style="display: flex; align-items: center; gap: 0.6rem;">
+                          <div class="student-avatar" style="width:36px; height:36px; font-size:0.9rem;">${initial}</div>
+                          <span>${p.name}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span class="badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;">
+                          ${modality}
+                        </span>
+                      </td>
+                      <td><code style="font-weight:800; color:#0369a1;">${p.email}</code></td>
+                      <td>${p.phone || '-'}</td>
+                      <td><strong>${clsCount}</strong> aulas</td>
+                      <td class="text-center">
+                        <div style="display: inline-flex; gap: 0.4rem;">
+                          <button class="btn btn-whatsapp btn-sm" onclick="App.openCredentialsModal(${p.id})" title="Ver e Encaminhar Acesso">
+                            <span>📲</span> Acesso
+                          </button>
+                          <button class="btn btn-secondary btn-sm" style="color:#ef4444; border-color:#fecaca;" onclick="App.handleDismissProfessor(${p.id}, '${p.name}')" title="Desvincular/Demitir Professor">
+                            🗑️ Demitir
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  `;
+                }).join('') : `
+                  <tr>
+                    <td colspan="6" class="text-center text-muted" style="padding: 2.5rem;">
+                      Nenhum professor cadastrado nesta arena ainda.
+                    </td>
+                  </tr>
+                `}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+
+    this.showView('professoresView');
+  },
+
+  openNewProfModal() {
+    const user = window.store.getCurrentUser();
+    const arena = window.store.getArenaById(user.arenaId);
+    const arenaName = arena ? arena.name : 'Arena';
+
+    const modalArenaSpan = document.getElementById('new_prof_arena_label');
+    if (modalArenaSpan) modalArenaSpan.textContent = arenaName;
+
+    const nameInput = document.getElementById('new_prof_name');
+    const emailInput = document.getElementById('new_prof_email');
+    const passInput = document.getElementById('new_prof_pass_preview');
+    if (nameInput) nameInput.value = '';
+    if (emailInput) emailInput.value = '';
+    if (passInput) passInput.value = '';
+
+    this.openModal('newProfModal');
+  },
+
+  updateNewProfEmailPreview() {
+    const nameInput = document.getElementById('new_prof_name');
+    const emailInput = document.getElementById('new_prof_email');
+    const passInput = document.getElementById('new_prof_pass_preview');
+    if (!nameInput || !emailInput) return;
+
+    const user = window.store.getCurrentUser();
+    const arena = window.store.getArenaById(user.arenaId);
+    const arenaName = arena ? arena.name : 'ilha';
+
+    const autoEmail = window.store.generateEmail(nameInput.value, arenaName, 'PROFESSOR');
+    emailInput.value = autoEmail;
+
+    if (passInput) {
+      const firstName = (nameInput.value.trim().split(' ')[0] || 'prof').toLowerCase();
+      passInput.value = `${firstName}.***** (5 dígitos aleatórios gerados ao salvar)`;
+    }
+  },
+
+  handleCreateProf(event) {
+    event.preventDefault();
+    const name = document.getElementById('new_prof_name').value;
+    const modality = document.getElementById('new_prof_modality').value;
+    const phone = document.getElementById('new_prof_phone').value;
+
+    const res = window.store.addProfessor({ name, modality, phone });
+    if (res.success) {
+      this.closeModal('newProfModal');
+      this.showToast('Professor cadastrado com sucesso!', 'success');
+      this.renderProfessores();
+
+      // Abre modal com a senha inicial gerada para o gestor encaminhar
+      this.showCreatedCredentialsModal(res.professor, res.generatedPassword);
+    } else {
+      this.showToast(res.error, 'danger');
+    }
+  },
+
+  showCreatedCredentialsModal(prof, password) {
+    const user = window.store.getCurrentUser();
+    const arena = window.store.getArenaById(user.arenaId);
+    const arenaName = arena ? arena.name : 'Arena';
+
+    document.getElementById('cred_prof_name').textContent = prof.name;
+    document.getElementById('cred_prof_modality').textContent = prof.modality || 'Vôlei de Praia 🏐';
+    document.getElementById('cred_prof_arena').textContent = arenaName;
+    document.getElementById('cred_prof_email').textContent = prof.email;
+    document.getElementById('cred_prof_password').textContent = password || prof.initialPassword || 'prof.12345';
+
+    const linkApp = window.location.origin + window.location.pathname + '#/login';
+    const message = `Olá, ${prof.name}! Seu cadastro como professor na ${arenaName} foi realizado com sucesso. 🏐\n\n` +
+      `🔗 Acesso ao Sistema: ${linkApp}\n` +
+      `📧 Login: ${prof.email}\n` +
+      `🔑 Senha Inicial: ${password || prof.initialPassword || 'senha123'}\n` +
+      `🏅 Modalidade: ${prof.modality || 'Vôlei de Praia'}\n\n` +
+      `Bom treino em quadra!`;
+
+    const btnWhatsApp = document.getElementById('btnForwardProfWhatsApp');
+    if (btnWhatsApp) {
+      btnWhatsApp.onclick = () => {
+        const phone = (prof.phone || '').replace(/\D/g, '');
+        const phoneParam = phone ? `phone=${phone}&` : '';
+        window.open(`https://wa.me/${phone ? phone : ''}?${phoneParam}text=${encodeURIComponent(message)}`, '_blank');
+      };
+    }
+
+    const btnCopy = document.getElementById('btnCopyCredentials');
+    if (btnCopy) {
+      btnCopy.onclick = () => {
+        navigator.clipboard.writeText(message);
+        this.showToast('Dados de acesso copiados para a área de transferência!', 'success');
+      };
+    }
+
+    this.openModal('profCredentialsCreatedModal');
+  },
+
+  openCredentialsModal(profId) {
+    const prof = window.store.getProfessorById(profId);
+    if (!prof) return;
+    this.showCreatedCredentialsModal(prof, prof.initialPassword);
+  },
+
+  handleDismissProfessor(profId, profName) {
+    const confirmed = confirm(`⚠️ ATENÇÃO: Deseja realmente demitir/desvincular o professor "${profName}" da arena?\n\nEle será removido do corpo docente e perderá o acesso.`);
+    if (confirmed) {
+      window.store.deleteProfessor(profId);
+      this.showToast(`Professor "${profName}" foi desvinculado com sucesso.`, 'info');
+      this.renderProfessores();
+    }
+  },
+
+  // ----------------------------------------------------
+  // PAINEL DO PROFESSOR (MEU PAINEL)
   // ----------------------------------------------------
   renderProfessorDashboard() {
     const container = document.getElementById('professorDashboardView');
@@ -542,7 +756,7 @@ const App = {
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
           <div>
             <span style="font-size: 0.85rem; font-weight: 800; color: var(--sand-warm); text-transform: uppercase; letter-spacing: 0.05em;">
-              Quadra: ${arenaName}
+              Quadra: ${arenaName} &bull; ${user.modality || 'Vôlei de Praia 🏐'}
             </span>
             <h1 style="font-size: 1.85rem; color: var(--primary-deep); margin-top: 0.15rem;">
               Olá, Prof. ${user.name}! 🏐
@@ -736,7 +950,7 @@ const App = {
   },
 
   // ----------------------------------------------------
-  // PAINEL DO ADMINISTRADOR (COM ISOLAMENTO MULTITENANT)
+  // PAINEL DO ADMINISTRADOR
   // ----------------------------------------------------
   renderAdminDashboard() {
     const container = document.getElementById('adminDashboardView');
@@ -749,7 +963,6 @@ const App = {
     const today = new Date().toISOString().split('T')[0];
     const todayBr = today.split('-').reverse().join('/');
 
-    // Aulas isoladas da arena do gestor
     const classes = window.store.getClasses();
     const todayClasses = classes.filter(c => c.date === today);
     const activeProfsToday = new Set(todayClasses.map(c => c.professorId)).size;
@@ -770,11 +983,9 @@ const App = {
     const monthStats = window.store.getMonthlyMetrics(currentMonth, currentYear);
 
     const students = window.store.getStudents();
-    const professors = window.store.getProfessors();
 
     container.innerHTML = `
       <div>
-        
         <div style="margin-bottom: 1.5rem;">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
             <div>
@@ -800,7 +1011,6 @@ const App = {
           </div>
         </div>
 
-        <!-- KPIS DE HOJE -->
         <h2 style="font-size: 1.2rem; color: var(--primary-deep); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
           <span>⚡</span> Métricas de Hoje (${todayBr})
         </h2>
@@ -834,7 +1044,6 @@ const App = {
           </div>
         </div>
 
-        <!-- KPIS DO MÊS -->
         <h2 style="font-size: 1.2rem; color: var(--primary-deep); margin-bottom: 0.75rem; margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem;">
           <span>📅</span> Consolidado Mensal (${currentArenaName})
         </h2>
@@ -868,7 +1077,6 @@ const App = {
           </div>
         </div>
 
-        <!-- AULAS RECENTES -->
         <div class="card" style="margin-top: 1.5rem;">
           <div class="card-header">
             <h2 class="card-title"><span>📋</span> Aulas Recentes na ${currentArenaName}</h2>
@@ -923,7 +1131,6 @@ const App = {
             </table>
           </div>
         </div>
-
       </div>
     `;
 
@@ -1008,101 +1215,6 @@ const App = {
       this.showToast('Aluno removido com sucesso.', 'info');
       this.renderStudents();
     }
-  },
-
-  // ----------------------------------------------------
-  // GESTÃO DE PROFESSORES (COM GERAÇÃO AUTOMÁTICA)
-  // ----------------------------------------------------
-  renderProfessores() {
-    const container = document.getElementById('professoresView');
-    if (!container) return;
-
-    const user = window.store.getCurrentUser();
-    const professors = window.store.getProfessors();
-    const arena = window.store.getArenaById(user.arenaId);
-    const arenaName = arena ? arena.name : 'Arena';
-
-    container.innerHTML = `
-      <div>
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
-          <div>
-            <span style="font-size: 0.85rem; font-weight: 800; color: #0284c7; text-transform: uppercase;">
-              Corpo Docente da ${arenaName}
-            </span>
-            <h1 style="font-size: 1.85rem; color: var(--primary-deep); margin-top: 0.15rem;">
-              Professores da Arena 👨‍🏫
-            </h1>
-            <p style="color: var(--text-muted); font-size: 0.95rem;">
-              Professores cadastrados com e-mail automático no padrão <code>(nome).(arena)@prof.com</code>.
-            </p>
-          </div>
-
-          <button class="btn btn-sand" onclick="App.openNewProfModal()">
-            <span>➕</span> Novo Professor
-          </button>
-        </div>
-
-        <div class="card">
-          <div class="table-responsive">
-            <table class="custom-table">
-              <thead>
-                <tr>
-                  <th>Nome do Professor</th>
-                  <th>Login Gerado (@prof.com)</th>
-                  <th>Telefone</th>
-                  <th>Aulas na Arena</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${professors.map(p => {
-                  const clsCount = window.store.state.classes.filter(c => c.professorId === p.id && c.arenaId === user.arenaId).length;
-                  const initial = p.name ? p.name.charAt(0).toUpperCase() : 'P';
-                  return `
-                    <tr>
-                      <td class="font-bold">
-                        <div style="display: flex; align-items: center; gap: 0.6rem;">
-                          <div class="student-avatar" style="width:36px; height:36px; font-size:0.9rem;">${initial}</div>
-                          <span>${p.name}</span>
-                        </div>
-                      </td>
-                      <td><code style="font-weight:800; color:#0369a1;">${p.email}</code></td>
-                      <td>${p.phone || '-'}</td>
-                      <td><strong>${clsCount}</strong> aulas</td>
-                    </tr>
-                  `;
-                }).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    `;
-
-    this.showView('professoresView');
-  },
-
-  openNewProfModal() {
-    const user = window.store.getCurrentUser();
-    const arena = window.store.getArenaById(user.arenaId);
-    const arenaName = arena ? arena.name : 'Ilha';
-
-    const modalArenaSpan = document.getElementById('new_prof_arena_label');
-    if (modalArenaSpan) modalArenaSpan.textContent = arenaName;
-
-    this.openModal('newProfModal');
-  },
-
-  updateNewProfEmailPreview() {
-    const nameInput = document.getElementById('new_prof_name');
-    const emailInput = document.getElementById('new_prof_email');
-    if (!nameInput || !emailInput) return;
-
-    const user = window.store.getCurrentUser();
-    const arena = window.store.getArenaById(user.arenaId);
-    const arenaName = arena ? arena.name : 'ilha';
-
-    const autoEmail = window.store.generateEmail(nameInput.value, arenaName, 'PROFESSOR');
-    emailInput.value = autoEmail;
   },
 
   // ----------------------------------------------------
@@ -1447,7 +1559,7 @@ const App = {
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
           <div>
             <span style="font-size: 0.85rem; font-weight: 800; color: var(--sand-warm); text-transform: uppercase;">
-              Relatório do Professor
+              Relatório do Professor &bull; ${user.modality || 'Vôlei de Praia 🏐'}
             </span>
             <h1 style="font-size: 1.85rem; color: var(--primary-deep); margin-top: 0.2rem;">
               Fechamento do Mês

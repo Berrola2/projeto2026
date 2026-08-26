@@ -187,7 +187,7 @@
     </div>
   </div>
 
-  <!-- MODAL: NOVO PROFESSOR (COM GERAÇÃO AUTOMÁTICA) -->
+  <!-- MODAL: NOVO PROFESSOR (COM MODALIDADE E GERAÇÃO AUTOMÁTICA) -->
   <div class="modal-backdrop" id="newProfModal">
     <div class="modal-card">
       <div class="modal-header-custom" style="padding-bottom: 0;">
@@ -198,21 +198,36 @@
       </div>
       <form onsubmit="App.handleCreateProf(event)">
         <div style="padding: 1.25rem 1.5rem;">
+          
           <div class="form-group">
-            <label class="form-label">Nome do Professor *</label>
+            <label class="form-label">Nome Completo do Professor *</label>
             <input 
               type="text" 
               id="new_prof_name" 
               class="form-control" 
-              placeholder="Ex: Lucas Treinador ou Felipe Gabriel" 
+              placeholder="Ex: Felipe Gabriel ou Lucas Santos" 
               required 
               oninput="App.updateNewProfEmailPreview()"
             >
           </div>
+
+          <!-- SELEÇÃO DE MODALIDADE -->
+          <div class="form-group">
+            <label class="form-label">Modalidade Esportiva Principal *</label>
+            <select id="new_prof_modality" class="form-select" required style="font-weight: 700; color: var(--primary-deep);">
+              <option value="Vôlei de Praia 🏐">🏐 Vôlei de Praia</option>
+              <option value="Beach Tennis 🎾">🎾 Beach Tennis</option>
+              <option value="Futevôlei ⚽">⚽ Futevôlei</option>
+              <option value="Funcional de Areia 🏃‍♂️">🏃‍♂️ Funcional de Areia</option>
+              <option value="Altinha ☀️">☀️ Altinha</option>
+              <option value="Múltiplas Modalidades 🌟">🌟 Múltiplas Modalidades</option>
+            </select>
+          </div>
           
+          <!-- LOGIN GERADO AUTOMATICAMENTE -->
           <div class="form-group" style="background: #f0fdf4; border: 2px dashed #86efac; padding: 0.85rem 1rem; border-radius: var(--radius-md);">
             <label class="form-label" style="color: #166534; font-size: 0.85rem; margin-bottom: 0.2rem;">
-              ⚡ E-mail / Login Automático Gerado:
+              ⚡ Login Automático Gerado:
             </label>
             <input 
               type="email" 
@@ -220,24 +235,85 @@
               class="form-control" 
               readonly 
               style="background: white; font-weight: 800; color: #15803d;"
-              placeholder="Digite o nome para gerar..." 
+              placeholder="Digite o nome acima para gerar..." 
               required
             >
             <div style="font-size: 0.75rem; color: #15803d; margin-top: 0.25rem;">
-              Padrão institucional: <code>(nome).(arena)@prof.com</code>
+              Padrão: <code>(primeiro_nome).(arena)@prof.com</code>
+            </div>
+          </div>
+
+          <!-- SENHA INICIAL GERADA -->
+          <div class="form-group" style="background: #fefce8; border: 1.5px dashed #fde047; padding: 0.85rem 1rem; border-radius: var(--radius-md);">
+            <label class="form-label" style="color: #854d0e; font-size: 0.85rem; margin-bottom: 0.2rem;">
+              🔑 Senha Inicial de Acesso:
+            </label>
+            <input 
+              type="text" 
+              id="new_prof_pass_preview" 
+              class="form-control" 
+              readonly 
+              style="background: white; font-weight: 800; color: #a16207;"
+              placeholder="Ex: felipe.58921 (gerada ao salvar)"
+            >
+            <div style="font-size: 0.75rem; color: #854d0e; margin-top: 0.25rem;">
+              Formato: <code>(primeiro_nome).(5 números aleatórios)</code>
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Telefone / WhatsApp</label>
+            <label class="form-label">Telefone / WhatsApp do Professor</label>
             <input type="tel" id="new_prof_phone" class="form-control" placeholder="(21) 98888-7777">
           </div>
         </div>
         <div class="modal-footer-custom two-buttons">
           <button type="button" class="btn btn-secondary" style="flex: 1;" data-close-modal>Cancelar</button>
-          <button type="submit" class="btn btn-sand" style="flex: 1;">Salvar Professor</button>
+          <button type="submit" class="btn btn-sand" style="flex: 1.2;">Salvar e Gerar Acesso</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CREDENCIAIS CRIADAS (ENCAMINHAMENTO AO PROFESSOR) -->
+  <div class="modal-backdrop" id="profCredentialsCreatedModal">
+    <div class="modal-card">
+      <div class="modal-header-custom">
+        <div class="modal-icon-badge whatsapp" style="background: #dcfce7; color: #15803d; border: 4px solid #bbf7d0;">
+          🔑
+        </div>
+        <h2 class="modal-title-custom" style="color: #15803d;">Acesso do Professor Gerado!</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">
+          Encaminhe estes dados para o professor acessar o aplicativo em quadra.
+        </p>
+      </div>
+
+      <div class="modal-body-custom" style="text-align: left;">
+        <div style="background: #f8fafc; border: 1.5px solid var(--border-color); border-radius: var(--radius-md); padding: 1.15rem; font-size: 0.95rem; display: flex; flex-direction: column; gap: 0.5rem;">
+          <div><strong>👤 Professor:</strong> <span id="cred_prof_name"></span></div>
+          <div><strong>🏅 Modalidade:</strong> <span id="cred_prof_modality"></span></div>
+          <div><strong>🏖️ Arena:</strong> <span id="cred_prof_arena"></span></div>
+          <div style="border-top: 1px dashed var(--border-color); padding-top: 0.5rem; margin-top: 0.25rem;">
+            <strong>📧 Login:</strong> <code id="cred_prof_email" style="font-weight: 800; color: #0369a1; font-size: 1rem;"></code>
+          </div>
+          <div>
+            <strong>🔑 Senha Inicial:</strong> <code id="cred_prof_password" style="font-weight: 800; color: #d97706; font-size: 1.05rem; background: #fef3c7; padding: 0.15rem 0.45rem; border-radius: 4px;"></code>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer-custom">
+        <button class="btn btn-whatsapp btn-block btn-lg" id="btnForwardProfWhatsApp">
+          <span>📲</span> ENCAMINHAR PELO WHATSAPP
+        </button>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-secondary" style="flex: 1;" id="btnCopyCredentials">
+            📋 Copiar Dados
+          </button>
+          <button class="btn btn-primary" style="flex: 1;" data-close-modal>
+            Concluir
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

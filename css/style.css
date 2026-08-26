@@ -200,22 +200,65 @@ a:hover {
 
 .user-badge-header {
   background: rgba(255, 255, 255, 0.12);
-  padding: 0.45rem 0.95rem;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 0.35rem 0.85rem;
   border-radius: var(--radius-full);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 0.65rem;
   font-size: 0.85rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.user-badge-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--sand-gold), var(--sunset-orange));
+  color: white;
+  font-weight: 800;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+.user-badge-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 700;
+  color: white;
+}
+
+.user-badge-arena-tag {
+  background: rgba(245, 158, 11, 0.25);
+  border: 1px solid rgba(254, 240, 138, 0.4);
+  color: #fef08a;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .role-pill {
-  padding: 0.2rem 0.65rem;
+  padding: 0.25rem 0.65rem;
   border-radius: var(--radius-full);
   font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .role-pill-professor {
@@ -226,6 +269,27 @@ a:hover {
 .role-pill-admin {
   background: #38bdf8;
   color: #0369a1;
+}
+
+.user-badge-logout {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: all var(--transition-fast);
+}
+
+.user-badge-logout:hover {
+  background: rgba(239, 68, 68, 0.85);
+  border-color: #ef4444;
+  transform: scale(1.08);
 }
 
 /* ==========================================================================
