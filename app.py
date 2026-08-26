@@ -30,6 +30,16 @@ def create_app():
     # Garante diretórios
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+    # Cria tabelas e popula o banco de dados automaticamente se estiver vazio
+    with app.app_context():
+        db.create_all()
+        if not app.config.get('TESTING'):
+            try:
+                seed_database(app)
+            except Exception as e:
+                print(f"Aviso ao popular banco: {e}")
+
+
     # ----------------------------------------------------
     # FILTROS E PROCESSADORES DE CONTEXTO JINJA2 (PT-BR)
     # ----------------------------------------------------
@@ -930,8 +940,9 @@ def create_app():
 
     return app
 
+# Instância padrão da aplicação para Flask CLI, WSGI e execução direta
+app = create_app()
 
 if __name__ == '__main__':
-    app = create_app()
-    seed_database(app)
     app.run(host='0.0.0.0', port=5000, debug=True)
+
