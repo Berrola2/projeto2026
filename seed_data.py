@@ -69,6 +69,14 @@ def seed_database(app):
             role="ADMIN",
             phone="(21) 98888-0001"
         )
+
+        admin_user2 = User(
+            name="Administrador da Arena",
+            email="admin@arenaadm.com",
+            password_hash=generate_password_hash("senha123"),
+            role="ADMIN",
+            phone="(21) 98888-0000"
+        )
         
         prof_carlos = User(
             name="Carlos Silva",
@@ -86,7 +94,7 @@ def seed_database(app):
             phone="(21) 97777-2002"
         )
 
-        db.session.add_all([admin_user, prof_carlos, prof_ana])
+        db.session.add_all([admin_user, admin_user2, prof_carlos, prof_ana])
         db.session.commit()
 
         # 2. Arenas
