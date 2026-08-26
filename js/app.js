@@ -9,6 +9,22 @@
 const App = {
   currentRoute: '',
 
+  maskPhone(value) {
+    if (!value) return '';
+    const digits = value.replace(/\D/g, '').slice(0, 11);
+    if (digits.length === 0) return '';
+    if (digits.length <= 2) {
+      return `(${digits}`;
+    }
+    if (digits.length <= 3) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    }
+    if (digits.length <= 7) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2, 3)} ${digits.slice(3)}`;
+    }
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 3)} ${digits.slice(3, 7)}-${digits.slice(7, 11)}`;
+  },
+
   init() {
     window.addEventListener('hashchange', () => this.handleRoute());
 
@@ -16,6 +32,13 @@ const App = {
       if (e.target.matches('[data-close-modal]') || e.target.classList.contains('modal-backdrop')) {
         const modal = e.target.closest('.modal-backdrop');
         if (modal) this.closeModal(modal.id);
+      }
+    });
+
+    // Máscara automática de telefone padrão: (XX) X XXXX-XXXX
+    document.addEventListener('input', (e) => {
+      if (e.target && (e.target.matches('input[type="tel"]') || e.target.id.includes('phone') || e.target.id.includes('Phone'))) {
+        e.target.value = this.maskPhone(e.target.value);
       }
     });
 
@@ -440,7 +463,7 @@ const App = {
 
             <div class="form-group">
               <label for="regPhone" class="form-label">Telefone / WhatsApp</label>
-              <input type="tel" id="regPhone" class="form-control" placeholder="(21) 99999-9999">
+              <input type="tel" id="regPhone" class="form-control" placeholder="(21) 9 9999-9999">
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
@@ -581,7 +604,7 @@ const App = {
                         </span>
                       </td>
                       <td><code style="font-weight:800; color:#0369a1;">${p.email}</code></td>
-                      <td>${p.phone || '-'}</td>
+                      <td>${p.phone ? App.maskPhone(p.phone) : '-'}</td>
                       <td><strong>${clsCount}</strong> aulas</td>
                       <td class="text-center">
                         <div style="display: inline-flex; gap: 0.4rem;">
@@ -1189,7 +1212,7 @@ const App = {
                       <td class="font-bold">${s.name}</td>
                       <td>${arenaName}</td>
                       <td><span style="font-weight:700; color:var(--primary-ocean);">${s.groupName || 'Geral'}</span></td>
-                      <td>${s.phone || '-'}</td>
+                      <td>${s.phone ? App.maskPhone(s.phone) : '-'}</td>
                       <td style="color:var(--text-muted); font-size:0.85rem;">${s.email || '-'}</td>
                       <td class="text-center">
                         <button class="btn btn-secondary btn-sm" style="color:#ef4444;" onclick="App.deleteStudent(${s.id})" title="Excluir Aluno">
