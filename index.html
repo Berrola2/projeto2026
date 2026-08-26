@@ -317,58 +317,6 @@
     </div>
   </div>
 
-  <!-- MODAL: CONFIGURAÇÃO DO BANCO DE DADOS SUPABASE (ONLINE MULTI-DISPOSITIVOS) -->
-  <div class="modal-backdrop" id="supabaseConfigModal">
-    <div class="modal-card" style="max-width: 520px;">
-      <div class="modal-header-custom">
-        <div class="modal-icon-badge" style="background: #dcfce7; color: #15803d; border: 4px solid #bbf7d0;">
-          ☁️
-        </div>
-        <h2 class="modal-title-custom" style="color: #0f172a;">Banco de Dados Supabase (Online)</h2>
-        <p style="color: var(--text-muted); font-size: 0.88rem;">
-          Conecte sua conta do Supabase para sincronizar turmas, fotos e chamadas em tempo real entre celular e computador.
-        </p>
-      </div>
-
-      <form onsubmit="App.handleSaveSupabaseConfig(event)">
-        <div style="padding: 1.25rem 1.5rem;">
-          <div class="form-group">
-            <label class="form-label">Project URL do Supabase *</label>
-            <input 
-              type="url" 
-              id="cfg_supabase_url" 
-              class="form-control" 
-              placeholder="https://xyzcompany.supabase.co" 
-              required
-            >
-            <div class="form-text">Encontrado no painel do Supabase em: <em>Project Settings > API > Project URL</em>.</div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Anon / Public API Key *</label>
-            <input 
-              type="password" 
-              id="cfg_supabase_key" 
-              class="form-control" 
-              placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." 
-              required
-            >
-            <div class="form-text">Chave anônima pública (<em>Project Settings > API > anon public</em>).</div>
-          </div>
-
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-md); padding: 0.85rem; font-size: 0.8rem; color: #475569;">
-            💡 <strong>Instrução Rápida:</strong> Se ainda não criou as tabelas no Supabase, basta copiar e rodar o arquivo <code>supabase_schema.sql</code> incluído na raiz do projeto dentro do <em>SQL Editor</em> do Supabase!
-          </div>
-        </div>
-
-        <div class="modal-footer-custom two-buttons">
-          <button type="button" class="btn btn-secondary" style="flex: 1;" data-close-modal>Fechar</button>
-          <button type="submit" class="btn btn-primary" style="flex: 1.2;">Conectar e Sincronizar</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
   <!-- CDN DO CLIENTE SUPABASE OFICIAL -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -407,31 +355,10 @@
       App.renderArenas();
     };
 
-    App.handleSaveSupabaseConfig = async function(e) {
-      e.preventDefault();
-      const url = document.getElementById('cfg_supabase_url').value;
-      const key = document.getElementById('cfg_supabase_key').value;
-
-      App.showToast('Conectando ao Supabase...', 'info');
-      const ok = await window.SupabaseSync.setConfig(url, key);
-      if (ok) {
-        App.closeModal('supabaseConfigModal');
-        App.showToast('🟢 Supabase conectado e sincronizado com sucesso!', 'success');
-      } else {
-        App.showToast('⚠️ Verifique as credenciais do Supabase e tente novamente.', 'danger');
-      }
-    };
-
-    // Preenche os campos do modal com as configurações salvas se houverem
     document.addEventListener('DOMContentLoaded', () => {
-      const cfg = window.SupabaseSync.getConfig();
-      if (cfg.url) {
-        const u = document.getElementById('cfg_supabase_url');
-        const k = document.getElementById('cfg_supabase_key');
-        if (u) u.value = cfg.url;
-        if (k) k.value = cfg.key;
+      if (window.SupabaseSync) {
+        window.SupabaseSync.init();
       }
-      window.SupabaseSync.init();
     });
   </script>
 
