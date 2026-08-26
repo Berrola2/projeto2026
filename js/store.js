@@ -23,14 +23,20 @@ function sanitizeSlug(text) {
     .toLowerCase();
 }
 
-// Gera e-mail no formato oficial: (primeiro_nome).(arena)@(funcao).com
+// Gera e-mail no formato oficial: (nome + primeira letra do Sobrenome).(arena)@(funcao).com
 function generateAutomaticEmail(name, arenaName, role) {
   if (!name) return '';
   
-  const firstName = sanitizeSlug(name.trim().split(' ')[0]);
-  
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const firstName = sanitizeSlug(parts[0]);
+  let initialSurname = '';
+  if (parts.length > 1) {
+    initialSurname = sanitizeSlug(parts[1].charAt(0));
+  }
+  const userSlug = `${firstName}${initialSurname}`;
+
   if (role === 'SUPER_ADMIN') {
-    return `${firstName || 'dev'}.master@dev.com`;
+    return `${userSlug || 'dev'}.master@dev.com`;
   }
 
   // Limpa prefixos comuns de arena como "Arena ", "Praia ", etc.
@@ -39,8 +45,8 @@ function generateAutomaticEmail(name, arenaName, role) {
 
   const domain = (role === 'PROFESSOR') ? 'prof.com' : 'adm.com';
   
-  if (!firstName || !cleanArena) return '';
-  return `${firstName}.${cleanArena}@${domain}`;
+  if (!userSlug || !cleanArena) return '';
+  return `${userSlug}.${cleanArena}@${domain}`;
 }
 
 // Gera senha inicial no formato: (primeiro_nome).(5_numeros_aleatorios)
@@ -151,16 +157,16 @@ function getDefaultData() {
       { id: 99, name: 'Master Developer', email: 'admin.master@dev.com', role: 'SUPER_ADMIN', arenaId: null, phone: '(21) 9 9999-9999' },
 
       // ARENA ILHA (Isolamento 1)
-      { id: 1, name: 'Heitor Augusto', email: 'heitor.ilha@adm.com', role: 'ADMIN', arenaId: 1, phone: '(21) 9 8888-0001' },
-      { id: 2, name: 'Felipe Gabriel', email: 'felipe.ilha@prof.com', role: 'PROFESSOR', arenaId: 1, modality: 'Vôlei de Praia 🏐', initialPassword: 'felipe.74912', phone: '(21) 9 7777-1001' },
+      { id: 1, name: 'Heitor Augusto', email: 'heitora.ilha@adm.com', role: 'ADMIN', arenaId: 1, phone: '(21) 9 8888-0001' },
+      { id: 2, name: 'Felipe Gabriel', email: 'felipeg.ilha@prof.com', role: 'PROFESSOR', arenaId: 1, modality: 'Vôlei de Praia 🏐', initialPassword: 'felipe.74912', phone: '(21) 9 7777-1001' },
       
       // ARENA MAROKA (Isolamento 2)
-      { id: 3, name: 'Marcos Gestor', email: 'marcos.maroka@adm.com', role: 'ADMIN', arenaId: 2, phone: '(21) 9 8888-0002' },
-      { id: 4, name: 'Lucas Treinador', email: 'lucas.maroka@prof.com', role: 'PROFESSOR', arenaId: 2, modality: 'Futevôlei ⚽', initialPassword: 'lucas.83910', phone: '(21) 9 7777-2002' },
+      { id: 3, name: 'Marcos Gestor', email: 'marcosg.maroka@adm.com', role: 'ADMIN', arenaId: 2, phone: '(21) 9 8888-0002' },
+      { id: 4, name: 'Lucas Treinador', email: 'lucast.maroka@prof.com', role: 'PROFESSOR', arenaId: 2, modality: 'Futevôlei ⚽', initialPassword: 'lucas.83910', phone: '(21) 9 7777-2002' },
 
       // OUTRAS ARENAS
-      { id: 5, name: 'Carlos Silva', email: 'carlos.ipanema@prof.com', role: 'PROFESSOR', arenaId: 3, modality: 'Vôlei de Praia 🏐', initialPassword: 'carlos.61823', phone: '(21) 9 7777-3003' },
-      { id: 6, name: 'Ana Souza', email: 'ana.copacabana@prof.com', role: 'PROFESSOR', arenaId: 4, modality: 'Beach Tennis 🎾', initialPassword: 'ana.94120', phone: '(21) 9 7777-4004' }
+      { id: 5, name: 'Carlos Silva', email: 'carloss.ipanema@prof.com', role: 'PROFESSOR', arenaId: 3, modality: 'Vôlei de Praia 🏐', initialPassword: 'carlos.61823', phone: '(21) 9 7777-3003' },
+      { id: 6, name: 'Ana Souza', email: 'anas.copacabana@prof.com', role: 'PROFESSOR', arenaId: 4, modality: 'Beach Tennis 🎾', initialPassword: 'ana.94120', phone: '(21) 9 7777-4004' }
     ],
     students: [
       // Alunos Arena Ilha (ID: 1)
@@ -244,7 +250,7 @@ function getDefaultData() {
 
 class Store {
   constructor() {
-    this.STORAGE_KEY = 'VOLEI_PRAIA_DB_v4';
+    this.STORAGE_KEY = 'VOLEI_PRAIA_DB_v5';
     this.listeners = [];
     this.state = this.load();
   }

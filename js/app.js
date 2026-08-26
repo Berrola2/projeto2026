@@ -3,6 +3,7 @@
  * SISTEMA DE GESTÃO DE AULAS DE VÔLEI DE PRAIA
  * Roteador de Telas (SPA), Navegação, Modais e Renderização
  * Suporte a SUPER_ADMIN (@dev.com), Landing Pages de Arena e Multi-Tenant
+ * Padrão de E-mail: (nome + primeira letra do Sobrenome).(arena)@(funcao).com
  * ==========================================================================
  */
 
@@ -68,9 +69,15 @@ const App = {
   },
 
   handleRoute() {
-    const hash = window.location.hash || '#/login';
-    this.currentRoute = hash;
+    let hash = window.location.hash || '#/login';
+    
+    // Bloqueia cadastro público: apenas gestores e dev criam acessos
+    if (hash === '#/cadastro') {
+      hash = '#/login';
+      window.location.hash = '#/login';
+    }
 
+    this.currentRoute = hash;
     const user = window.store.getCurrentUser();
 
     // 1. Rotas Públicas (Sem necessidade de Login)
@@ -81,10 +88,6 @@ const App = {
     }
     if (hash === '#/login') {
       this.renderLogin();
-      return;
-    }
-    if (hash === '#/cadastro') {
-      this.renderRegister();
       return;
     }
 
@@ -349,7 +352,7 @@ const App = {
   },
 
   // ----------------------------------------------------
-  // LOGIN (FORMATADO CONFORME SOLICITADO)
+  // LOGIN (SEM CADASTRO PÚBLICO E COM ATALHOS LIMPOS)
   // ----------------------------------------------------
   renderLogin() {
     const container = document.getElementById('loginView');
@@ -391,12 +394,6 @@ const App = {
               <span>🏐</span> Entrar na Conta
             </button>
           </form>
-
-          <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-color); text-align: center; font-size: 0.9rem;">
-            <p style="color: var(--text-muted);">
-              Novo na plataforma? <a href="#/cadastro" style="font-weight: 800;">Cadastre-se com geração automática de e-mail</a>
-            </p>
-          </div>
         </div>
 
         <!-- DEMO RÁPIDO DE ACESSOS (MULTI-PERFIS) -->
@@ -404,11 +401,11 @@ const App = {
           <strong style="color: #0f172a; display: block; margin-bottom: 0.5rem;">🔑 Atalhos para Teste:</strong>
           
           <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-            <button class="btn btn-sand btn-sm" onclick="App.quickFillLogin('felipe.ilha@prof.com', 'felipe.74912')">
-              👨‍🏫 Prof. Felipe (Arena Ilha)
+            <button class="btn btn-sand btn-sm" onclick="App.quickFillLogin('felipeg.ilha@prof.com', 'felipe.74912')">
+              👨‍🏫 Prof. Felipe (felipeg.ilha@prof.com)
             </button>
-            <button class="btn btn-primary btn-sm" onclick="App.quickFillLogin('heitor.ilha@adm.com', 'senha123')">
-              🛡️ Gestor Heitor (Arena Ilha)
+            <button class="btn btn-primary btn-sm" onclick="App.quickFillLogin('heitora.ilha@adm.com', 'senha123')">
+              🛡️ Gestor Heitor (heitora.ilha@adm.com)
             </button>
             <button class="btn btn-secondary btn-sm" style="background: #7c3aed; color: white; border: none;" onclick="App.quickFillLogin('admin.master@dev.com', 'senha123')">
               🛠️ Master Dev (@dev.com - Super Admin Global)
@@ -449,157 +446,6 @@ const App = {
     }
   },
 
-  // ----------------------------------------------------
-  // CADASTRO PÚBLICO
-  // ----------------------------------------------------
-  renderRegister() {
-    const container = document.getElementById('registerView');
-    if (!container) return;
-
-    const arenas = window.store.getAllArenasGlobal();
-
-    container.innerHTML = `
-      <div style="max-width: 500px; margin: 2rem auto;">
-        
-        <div style="text-align: center; margin-bottom: 1.5rem;">
-          <h1 style="font-size: 1.85rem; color: #0f172a; margin-bottom: 0.25rem;">Cadastro de Usuário</h1>
-          <p style="color: #64748b; font-size: 0.95rem;">Geração automática de login por Nome, Arena e Função</p>
-        </div>
-
-        <div class="card" style="padding: 1.85rem; border-radius: 22px; box-shadow: var(--shadow-lg);">
-          <form onsubmit="App.handleRegister(event)">
-            
-            <div class="form-group">
-              <label for="regName" class="form-label">Nome Completo *</label>
-              <input 
-                type="text" 
-                id="regName" 
-                class="form-control" 
-                placeholder="Ex: Felipe Gabriel ou Heitor Augusto" 
-                required 
-                oninput="App.updateAutoEmailPreview()"
-              >
-            </div>
-
-            <div class="form-group">
-              <label for="regArena" class="form-label">Arena de Vôlei *</label>
-              <select 
-                id="regArena" 
-                class="form-select" 
-                required 
-                onchange="App.updateAutoEmailPreview()"
-                style="font-weight: 700;"
-              >
-                ${arenas.map(a => `<option value="${a.id}" data-name="${a.name}">${a.name}</option>`).join('')}
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="regRole" class="form-label">Função na Arena *</label>
-              <select 
-                id="regRole" 
-                class="form-select" 
-                required 
-                onchange="App.updateAutoEmailPreview()"
-                style="font-weight: 800; color: var(--primary-ocean);"
-              >
-                <option value="PROFESSOR">🏐 Professor de Quadra (@prof.com)</option>
-                <option value="ADMIN">🛡️ Administrador / Gestor da Arena (@adm.com)</option>
-              </select>
-            </div>
-
-            <div class="form-group" style="background: #f0fdf4; border: 2px dashed #86efac; padding: 1rem; border-radius: var(--radius-md);">
-              <label for="regEmail" class="form-label" style="color: #166534;">
-                ⚡ Login Gerado Automaticamente:
-              </label>
-              <input 
-                type="email" 
-                id="regEmail" 
-                class="form-control" 
-                readonly 
-                style="background: white; font-weight: 800; color: #15803d; font-size: 1.05rem;"
-                placeholder="Preencha o nome acima para gerar..." 
-                required
-              >
-              <div style="font-size: 0.8rem; color: #15803d; margin-top: 0.35rem;">
-                Formato padronizado: <code>(primeiro_nome).(arena)@(funcao).com</code>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="regPhone" class="form-label">Telefone / WhatsApp</label>
-              <input type="tel" id="regPhone" class="form-control" placeholder="(21) 9 9999-9999">
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
-              <div class="form-group">
-                <label for="regPassword" class="form-label">Senha *</label>
-                <input type="password" id="regPassword" class="form-control" placeholder="Mínimo 6 dígitos" required>
-              </div>
-
-              <div class="form-group">
-                <label for="regPassConfirm" class="form-label">Confirmar Senha *</label>
-                <input type="password" id="regPassConfirm" class="form-control" placeholder="Repita a senha" required>
-              </div>
-            </div>
-
-            <button type="submit" class="btn btn-sand btn-block btn-lg" style="margin-top: 1rem;">
-              <span>✨</span> Finalizar Cadastro & Entrar
-            </button>
-          </form>
-
-          <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-color); text-align: center; font-size: 0.9rem;">
-            <p style="color: var(--text-muted);">
-              Já possui conta? <a href="#/login" style="font-weight: 800;">Faça login</a>
-            </p>
-          </div>
-        </div>
-
-      </div>
-    `;
-
-    this.showView('registerView');
-    this.updateAutoEmailPreview();
-  },
-
-  updateAutoEmailPreview() {
-    const nameInput = document.getElementById('regName');
-    const arenaSelect = document.getElementById('regArena');
-    const roleSelect = document.getElementById('regRole');
-    const emailInput = document.getElementById('regEmail');
-
-    if (!nameInput || !arenaSelect || !roleSelect || !emailInput) return;
-
-    const name = nameInput.value;
-    const selectedOption = arenaSelect.options[arenaSelect.selectedIndex];
-    const arenaName = selectedOption ? selectedOption.getAttribute('data-name') : 'ilha';
-    const role = roleSelect.value;
-
-    const autoEmail = window.store.generateEmail(name, arenaName, role);
-    emailInput.value = autoEmail;
-  },
-
-  handleRegister(event) {
-    event.preventDefault();
-    const name = document.getElementById('regName').value;
-    const email = document.getElementById('regEmail').value;
-    const arenaId = document.getElementById('regArena').value;
-    const role = document.getElementById('regRole').value;
-    const phone = document.getElementById('regPhone').value;
-    const pass = document.getElementById('regPassword').value;
-    const passConf = document.getElementById('regPassConfirm').value;
-
-    const result = window.store.register(name, email, phone, arenaId, role, pass, passConf);
-    if (result.success) {
-      this.showToast(`Conta criada com sucesso! Login: ${result.user.email}`, 'success');
-      if (result.user.role === 'SUPER_ADMIN') this.navigate('#/dev');
-      else if (result.user.role === 'ADMIN') this.navigate('#/admin');
-      else this.navigate('#/professor');
-    } else {
-      this.showToast(result.error, 'danger');
-    }
-  },
-
   handleLogout() {
     window.store.logout();
     this.showToast('Sessão encerrada com sucesso.', 'info');
@@ -631,15 +477,15 @@ const App = {
                 Controle Master Multi-Tenant ⚡
               </h1>
               <p style="color: #e0e7ff; font-size: 0.95rem; margin-top: 0.25rem;">
-                Gerenciamento global de Arenas, Gestores, Landing Pages e provisionamento de novos ambientes SaaS.
+                Gerenciamento global de Arenas, Gestores, Landing Pages e provisionamento instantâneo de novos ambientes SaaS.
               </p>
             </div>
 
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-              <button class="btn btn-sand" onclick="App.openModal('newArenaModal')">
-                <span>➕</span> Provisionar Nova Arena
+              <button class="btn btn-sand" onclick="App.openNewArenaModal()">
+                <span>➕</span> Provisionar Nova Arena & Gestor
               </button>
-              <button class="btn btn-primary" onclick="App.openModal('newManagerModal')">
+              <button class="btn btn-primary" onclick="App.openNewManagerModal()">
                 <span>🛡️</span> Cadastrar Gestor
               </button>
             </div>
@@ -710,7 +556,7 @@ const App = {
         <div class="card">
           <div class="card-header">
             <h2 class="card-title"><span>🏖️</span> Arenas Cadastradas & Landing Pages Provisionadas</h2>
-            <button class="btn btn-sand btn-sm" onclick="App.openModal('newArenaModal')">+ Nova Arena</button>
+            <button class="btn btn-sand btn-sm" onclick="App.openNewArenaModal()">+ Nova Arena</button>
           </div>
 
           <div class="table-responsive">
@@ -739,8 +585,8 @@ const App = {
                         <span style="font-size: 0.75rem; color: var(--text-muted);">Tenant ID: #${a.id}</span>
                       </td>
                       <td>
-                        <code style="background: #e0e7ff; color: #4338ca; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: 4px;">
-                          /arena/${slug}
+                        <code style="background: #e0f2fe; color: #0369a1; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: 4px;">
+                          #/arena/${slug}
                         </code>
                       </td>
                       <td style="font-size: 0.85rem; color: var(--text-muted); max-width: 250px;">${a.location}</td>
@@ -754,6 +600,9 @@ const App = {
                       </td>
                       <td class="text-center">
                         <div style="display: inline-flex; gap: 0.35rem;">
+                          <button class="btn btn-sand btn-sm" onclick="App.openNewManagerModal(${a.id})" title="Criar Gestor para esta Arena">
+                            + Gestor
+                          </button>
                           <button class="btn btn-secondary btn-sm" onclick="App.openEditArenaConfigModal(${a.id})" title="Editar Configurações da Landing Page">
                             ⚙️
                           </button>
@@ -777,7 +626,7 @@ const App = {
         <div class="card">
           <div class="card-header">
             <h2 class="card-title"><span>🛡️</span> Gestores e Administradores de Arena (@adm.com)</h2>
-            <button class="btn btn-primary btn-sm" onclick="App.openModal('newManagerModal')">+ Novo Gestor</button>
+            <button class="btn btn-primary btn-sm" onclick="App.openNewManagerModal()">+ Novo Gestor</button>
           </div>
 
           <div class="table-responsive">
@@ -861,6 +710,176 @@ const App = {
   },
 
   // ----------------------------------------------------
+  // PROVISIONAMENTO DE ARENA & GESTOR (DEV FLOW)
+  // ----------------------------------------------------
+  openNewArenaModal() {
+    document.getElementById('new_ar_name').value = '';
+    document.getElementById('new_ar_loc').value = '';
+    document.getElementById('new_ar_mgr_name').value = '';
+    document.getElementById('new_ar_mgr_phone').value = '';
+    const previewBox = document.getElementById('new_ar_mgr_email_box');
+    if (previewBox) previewBox.style.display = 'none';
+    this.openModal('newArenaModal');
+  },
+
+  updateNewArenaPreview() {
+    const arenaName = document.getElementById('new_ar_name').value;
+    const mgrName = document.getElementById('new_ar_mgr_name').value;
+    const previewBox = document.getElementById('new_ar_mgr_email_box');
+    const previewInput = document.getElementById('new_ar_mgr_email_preview');
+
+    if (mgrName.trim() && arenaName.trim()) {
+      const email = window.store.generateEmail(mgrName, arenaName, 'ADMIN');
+      if (previewInput) previewInput.value = email;
+      if (previewBox) previewBox.style.display = 'block';
+    } else {
+      if (previewBox) previewBox.style.display = 'none';
+    }
+  },
+
+  handleCreateArena(event) {
+    event.preventDefault();
+    const name = document.getElementById('new_ar_name').value;
+    const location = document.getElementById('new_ar_loc').value;
+    const mgrName = document.getElementById('new_ar_mgr_name').value;
+    const mgrPhone = document.getElementById('new_ar_mgr_phone').value;
+
+    const newArena = window.store.addArena({ name, location });
+    this.closeModal('newArenaModal');
+
+    // Se o Dev informou o Gestor junto, já cria o acesso automaticamente
+    if (mgrName.trim()) {
+      const mgrRes = window.store.addManager({ name: mgrName, arenaId: newArena.id, phone: mgrPhone });
+      if (mgrRes.success) {
+        this.showToast(`Arena "${name}" provisionada com gestor criado!`, 'success');
+        if (this.currentRoute === '#/dev') this.renderSuperAdminDashboard();
+        else this.renderArenas();
+        this.showCreatedManagerCredentials(mgrRes.manager, mgrRes.generatedPassword);
+        return;
+      }
+    }
+
+    this.showToast(`Arena "${name}" cadastrada com sucesso!`, 'success');
+    if (this.currentRoute === '#/dev') this.renderSuperAdminDashboard();
+    else this.renderArenas();
+  },
+
+  openNewManagerModal(preselectedArenaId = null) {
+    const select = document.getElementById('new_mgr_arena');
+    const arenas = window.store.getAllArenasGlobal();
+    if (select) {
+      select.innerHTML = arenas.map(a => `<option value="${a.id}" ${preselectedArenaId && Number(preselectedArenaId) === a.id ? 'selected' : ''}>${a.name}</option>`).join('');
+    }
+    document.getElementById('new_mgr_name').value = '';
+    document.getElementById('new_mgr_phone').value = '';
+    this.openModal('newManagerModal');
+  },
+
+  handleCreateManager(event) {
+    event.preventDefault();
+    const name = document.getElementById('new_mgr_name').value;
+    const arenaId = document.getElementById('new_mgr_arena').value;
+    const phone = document.getElementById('new_mgr_phone').value;
+
+    const res = window.store.addManager({ name, arenaId, phone });
+    if (res.success) {
+      this.closeModal('newManagerModal');
+      this.showToast('Gestor cadastrado com sucesso!', 'success');
+      this.renderSuperAdminDashboard();
+      this.showCreatedManagerCredentials(res.manager, res.generatedPassword);
+    } else {
+      this.showToast(res.error, 'danger');
+    }
+  },
+
+  showCreatedManagerCredentials(manager, password) {
+    const arena = window.store.getArenaById(manager.arenaId);
+    const arenaName = arena ? arena.name : 'Arena';
+
+    document.getElementById('cred_prof_name').textContent = manager.name;
+    document.getElementById('cred_prof_modality').textContent = 'Administração / Gestor 🛡️';
+    document.getElementById('cred_prof_arena').textContent = arenaName;
+    document.getElementById('cred_prof_email').textContent = manager.email;
+    document.getElementById('cred_prof_password').textContent = password || manager.initialPassword || 'senha123';
+
+    const linkApp = window.location.origin + window.location.pathname + '#/login';
+    const message = `Olá, ${manager.name}! Sua conta de Gestor da ${arenaName} foi criada com sucesso. 🛡️\n\n` +
+      `🔗 Link de Acesso: ${linkApp}\n` +
+      `📧 Login: ${manager.email}\n` +
+      `🔑 Senha: ${password || manager.initialPassword || 'senha123'}\n\n` +
+      `Tenha uma excelente gestão!`;
+
+    const btnWhatsApp = document.getElementById('btnForwardProfWhatsApp');
+    if (btnWhatsApp) {
+      btnWhatsApp.onclick = () => {
+        const phone = (manager.phone || '').replace(/\D/g, '');
+        window.open(`https://wa.me/${phone ? phone : ''}?text=${encodeURIComponent(message)}`, '_blank');
+      };
+    }
+
+    const btnCopy = document.getElementById('btnCopyCredentials');
+    if (btnCopy) {
+      btnCopy.onclick = () => {
+        navigator.clipboard.writeText(message);
+        this.showToast('Dados de acesso copiados!', 'success');
+      };
+    }
+
+    this.openModal('profCredentialsCreatedModal');
+  },
+
+  openManagerCredentialsModal(mgrId) {
+    const mgr = window.store.state.users.find(u => u.id === Number(mgrId));
+    if (!mgr) return;
+    this.showCreatedManagerCredentials(mgr, mgr.initialPassword || 'senha123');
+  },
+
+  handleDeleteArena(id, name) {
+    if (confirm(`⚠️ ATENÇÃO DEV: Deseja realmente excluir a "${name}" e todos os seus dados associados?`)) {
+      window.store.deleteArena(id);
+      this.showToast(`Arena "${name}" excluída com sucesso.`, 'info');
+      this.renderSuperAdminDashboard();
+    }
+  },
+
+  handleDeleteManager(id, name) {
+    if (confirm(`Deseja remover o gestor "${name}"?`)) {
+      window.store.deleteManager(id);
+      this.showToast(`Gestor "${name}" removido.`, 'info');
+      this.renderSuperAdminDashboard();
+    }
+  },
+
+  openEditArenaConfigModal(arenaId) {
+    const arena = window.store.getArenaById(arenaId);
+    if (!arena) return;
+    const cfg = window.store.getTenantConfig(arenaId);
+
+    document.getElementById('cfg_arena_id').value = arena.id;
+    document.getElementById('cfg_arena_name_label').textContent = arena.name;
+    document.getElementById('cfg_arena_slug').value = cfg.slug || arena.slug || '';
+    document.getElementById('cfg_arena_tagline').value = cfg.tagline || '';
+    document.getElementById('cfg_arena_whatsapp').value = cfg.whatsappContact || '';
+    document.getElementById('cfg_arena_instagram').value = cfg.instagram || '';
+
+    this.openModal('editArenaConfigModal');
+  },
+
+  handleSaveTenantConfig(event) {
+    event.preventDefault();
+    const arenaId = document.getElementById('cfg_arena_id').value;
+    const slug = (document.getElementById('cfg_arena_slug').value || '').trim();
+    const tagline = document.getElementById('cfg_arena_tagline').value;
+    const whatsappContact = document.getElementById('cfg_arena_whatsapp').value;
+    const instagram = document.getElementById('cfg_arena_instagram').value;
+
+    window.store.saveTenantConfig(arenaId, { slug, tagline, whatsappContact, instagram });
+    this.closeModal('editArenaConfigModal');
+    this.showToast('Configurações da Landing Page salvas com sucesso!', 'success');
+    this.renderSuperAdminDashboard();
+  },
+
+  // ----------------------------------------------------
   // PÁGINA INICIAL / LANDING PAGE DINÂMICA DA ARENA (#/arena/:slug)
   // ----------------------------------------------------
   renderArenaLandingPage(idOrSlug) {
@@ -875,8 +894,6 @@ const App = {
     }
 
     const config = window.store.getTenantConfig(arena.id);
-    const professors = window.store.getProfessors(arena.id);
-    const classes = window.store.getClasses({ arenaId: arena.id }).slice(0, 4);
 
     container.innerHTML = `
       <div class="arena-landing-wrapper">
@@ -962,110 +979,6 @@ const App = {
     `;
 
     this.showView('arenaLandingView');
-  },
-
-  handleCreateManager(event) {
-    event.preventDefault();
-    const name = document.getElementById('new_mgr_name').value;
-    const arenaId = document.getElementById('new_mgr_arena').value;
-    const phone = document.getElementById('new_mgr_phone').value;
-
-    const res = window.store.addManager({ name, arenaId, phone });
-    if (res.success) {
-      this.closeModal('newManagerModal');
-      this.showToast('Gestor cadastrado com sucesso!', 'success');
-      this.renderSuperAdminDashboard();
-      this.showCreatedManagerCredentials(res.manager, res.generatedPassword);
-    } else {
-      this.showToast(res.error, 'danger');
-    }
-  },
-
-  showCreatedManagerCredentials(manager, password) {
-    const arena = window.store.getArenaById(manager.arenaId);
-    const arenaName = arena ? arena.name : 'Arena';
-
-    document.getElementById('cred_prof_name').textContent = manager.name;
-    document.getElementById('cred_prof_modality').textContent = 'Administração / Gestão 🛡️';
-    document.getElementById('cred_prof_arena').textContent = arenaName;
-    document.getElementById('cred_prof_email').textContent = manager.email;
-    document.getElementById('cred_prof_password').textContent = password || manager.initialPassword || 'senha123';
-
-    const linkApp = window.location.origin + window.location.pathname + '#/login';
-    const message = `Olá, ${manager.name}! Sua conta de Gestor da ${arenaName} foi criada com sucesso. 🛡️\n\n` +
-      `🔗 Link de Acesso: ${linkApp}\n` +
-      `📧 Login: ${manager.email}\n` +
-      `🔑 Senha: ${password || manager.initialPassword || 'senha123'}\n\n` +
-      `Tenha uma excelente gestão!`;
-
-    const btnWhatsApp = document.getElementById('btnForwardProfWhatsApp');
-    if (btnWhatsApp) {
-      btnWhatsApp.onclick = () => {
-        const phone = (manager.phone || '').replace(/\D/g, '');
-        window.open(`https://wa.me/${phone ? phone : ''}?text=${encodeURIComponent(message)}`, '_blank');
-      };
-    }
-
-    const btnCopy = document.getElementById('btnCopyCredentials');
-    if (btnCopy) {
-      btnCopy.onclick = () => {
-        navigator.clipboard.writeText(message);
-        this.showToast('Dados de acesso copiados!', 'success');
-      };
-    }
-
-    this.openModal('profCredentialsCreatedModal');
-  },
-
-  openManagerCredentialsModal(mgrId) {
-    const mgr = window.store.state.users.find(u => u.id === Number(mgrId));
-    if (!mgr) return;
-    this.showCreatedManagerCredentials(mgr, mgr.initialPassword || 'senha123');
-  },
-
-  handleDeleteArena(id, name) {
-    if (confirm(`⚠️ ATENÇÃO DEV: Deseja realmente excluir a "${name}" e todos os seus dados associados?`)) {
-      window.store.deleteArena(id);
-      this.showToast(`Arena "${name}" excluída com sucesso.`, 'info');
-      this.renderSuperAdminDashboard();
-    }
-  },
-
-  handleDeleteManager(id, name) {
-    if (confirm(`Deseja remover o gestor "${name}"?`)) {
-      window.store.deleteManager(id);
-      this.showToast(`Gestor "${name}" removido.`, 'info');
-      this.renderSuperAdminDashboard();
-    }
-  },
-
-  openEditArenaConfigModal(arenaId) {
-    const arena = window.store.getArenaById(arenaId);
-    if (!arena) return;
-    const cfg = window.store.getTenantConfig(arenaId);
-
-    document.getElementById('cfg_arena_id').value = arena.id;
-    document.getElementById('cfg_arena_name_label').textContent = arena.name;
-    document.getElementById('cfg_arena_slug').value = cfg.slug || arena.slug || '';
-    document.getElementById('cfg_arena_tagline').value = cfg.tagline || '';
-    document.getElementById('cfg_arena_whatsapp').value = cfg.whatsappContact || '';
-    document.getElementById('cfg_arena_instagram').value = cfg.instagram || '';
-
-    this.openModal('editArenaConfigModal');
-  },
-
-  handleSaveTenantConfig(event) {
-    event.preventDefault();
-    const arenaId = document.getElementById('cfg_arena_id').value;
-    const slug = sanitizeSlug(document.getElementById('cfg_arena_slug').value);
-    const tagline = document.getElementById('cfg_arena_tagline').value;
-    const whatsappContact = document.getElementById('cfg_arena_whatsapp').value;
-    const instagram = document.getElementById('cfg_arena_instagram').value;
-
-    window.store.saveTenantConfig(arenaId, { slug, tagline, whatsappContact, instagram });
-    this.closeModal('editArenaConfigModal');
-    this.showToast('Configurações da Landing Page salvas com sucesso!', 'success');
-    this.renderSuperAdminDashboard();
   },
 
   // ----------------------------------------------------
@@ -1224,7 +1137,6 @@ const App = {
   },
 
   showCreatedCredentialsModal(prof, password) {
-    const user = window.store.getCurrentUser();
     const arena = window.store.getArenaById(prof.arenaId);
     const arenaName = arena ? arena.name : 'Arena';
 
@@ -1799,8 +1711,8 @@ const App = {
           </div>
 
           ${user.role === 'SUPER_ADMIN' ? `
-            <button class="btn btn-sand" onclick="App.openModal('newArenaModal')">
-              <span>➕</span> Provisionar Nova Arena
+            <button class="btn btn-sand" onclick="App.openNewArenaModal()">
+              <span>➕</span> Provisionar Nova Arena & Gestor
             </button>
           ` : ''}
         </div>
@@ -1834,6 +1746,9 @@ const App = {
                     🌐 Ver Site da Arena
                   </a>
                   ${user.role === 'SUPER_ADMIN' ? `
+                    <button class="btn btn-sand btn-sm" onclick="App.openNewManagerModal(${a.id})" title="Criar Gestor para esta Arena">
+                      + Gestor
+                    </button>
                     <button class="btn btn-secondary btn-sm" onclick="App.openEditArenaConfigModal(${a.id})" title="Configurar Landing Page">
                       ⚙️
                     </button>
@@ -1907,7 +1822,7 @@ const App = {
                     </div>
                   </div>
 
-                  <div style="display: flex; align-items: center; gap: 0.75rem;">
+                  <div style="display: align-items: center; gap: 0.75rem;">
                     <span class="badge ${badgeClass}">${statusLabel}</span>
                     <button class="btn btn-secondary btn-sm" onclick="App.navigate('#/aula/${c.id}')">Ver</button>
                   </div>
@@ -2031,7 +1946,7 @@ const App = {
             <div style="background: var(--warning-light); border-left: 4px solid var(--warning-amber); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem;">
               <strong style="color: #854d0e;">⚠️ Foto ainda não anexada para esta aula!</strong>
               <p style="font-size: 0.9rem; color: #a16207; margin-top: 0.25rem;">
-                Anexe a foto da turma reunida na areia para liberar o envio via WhatsApp e atualizar as métricas.
+                Anexe a foto da turma reunida na areia para concluir o registro e liberar o envio via WhatsApp.
               </p>
             </div>
 
