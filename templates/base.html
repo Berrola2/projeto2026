@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>{% block title %}Gestão Vôlei de Praia{% endblock %} - Vôlei de Praia Brasil</title>
+  
+  <!-- CSS Design System -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+  
+  <!-- Favicon / Emoji -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%22><text y=%2222%22 font-size=%2220%22>🏐</text></svg>">
+  
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+  <!-- CABEÇALHO SUPERIOR -->
+  <header class="app-header">
+    <div class="header-container">
+      <a href="{{ url_for('index') }}" class="brand-logo">
+        <div class="brand-icon">🏐</div>
+        <div>
+          <span>VÔLEI PRAIA</span>
+          <span class="brand-text-sub">Gestão de Aulas & Quadras</span>
+        </div>
+      </a>
+
+      {% if current_user %}
+      <!-- NAVEGAÇÃO DESKTOP -->
+      <nav class="nav-desktop">
+        {% if current_user.is_professor %}
+          <a href="{{ url_for('professor_dashboard') }}" class="nav-link {% if request.endpoint == 'professor_dashboard' %}active{% endif %}">
+            <span>📊</span> Meu Painel
+          </a>
+          <a href="{{ url_for('professor_quick_class') }}" class="nav-link {% if request.endpoint == 'professor_quick_class' %}active{% endif %}">
+            <span>⚡</span> Nova Aula
+          </a>
+          <a href="{{ url_for('professor_monthly_close') }}" class="nav-link {% if request.endpoint == 'professor_monthly_close' %}active{% endif %}">
+            <span>📅</span> Fechamento do Mês
+          </a>
+        {% elif current_user.is_admin %}
+          <a href="{{ url_for('admin_dashboard') }}" class="nav-link {% if request.endpoint == 'admin_dashboard' %}active{% endif %}">
+            <span>📊</span> Painel Geral
+          </a>
+          <a href="{{ url_for('admin_gallery') }}" class="nav-link {% if request.endpoint == 'admin_gallery' %}active{% endif %}">
+            <span>📸</span> Galeria de Fotos
+          </a>
+          <a href="{{ url_for('admin_reports') }}" class="nav-link {% if request.endpoint == 'admin_reports' %}active{% endif %}">
+            <span>📈</span> Relatórios
+          </a>
+          <a href="{{ url_for('admin_students') }}" class="nav-link {% if request.endpoint == 'admin_students' %}active{% endif %}">
+            <span>👥</span> Alunos
+          </a>
+          <a href="{{ url_for('admin_arenas') }}" class="nav-link {% if request.endpoint == 'admin_arenas' %}active{% endif %}">
+            <span>🏖️</span> Arenas
+          </a>
+          <a href="{{ url_for('admin_professores') }}" class="nav-link {% if request.endpoint == 'admin_professores' %}active{% endif %}">
+            <span>👨‍🏫</span> Professores
+          </a>
+          <a href="{{ url_for('admin_calendar') }}" class="nav-link {% if request.endpoint == 'admin_calendar' %}active{% endif %}">
+            <span>🗓️</span> Calendário
+          </a>
+        {% endif %}
+
+        <div class="user-badge-header">
+          <span>👤 {{ current_user.name }}</span>
+          <span class="role-pill {% if current_user.is_professor %}role-pill-professor{% else %}role-pill-admin{% endif %}">
+            {{ 'Professor' if current_user.is_professor else 'Administrador' }}
+          </span>
+          <a href="{{ url_for('logout') }}" title="Sair do Sistema" style="color: #cbd5e1; margin-left: 0.5rem;">
+            🚪
+          </a>
+        </div>
+      </nav>
+      {% endif %}
+    </div>
+  </header>
+
+  <!-- CONTEÚDO PRINCIPAL -->
+  <main class="main-content">
+    <!-- MENSAGENS FLASH / ALERTAS -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="alert-container">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+              <div>{{ message }}</div>
+              <button type="button" class="alert-close" aria-label="Fechar">&times;</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- BARRA DE NAVEGAÇÃO INFERIOR MOBILE -->
+  {% if current_user %}
+  <nav class="bottom-nav-mobile">
+    {% if current_user.is_professor %}
+      <a href="{{ url_for('professor_dashboard') }}" class="bottom-nav-item {% if request.endpoint == 'professor_dashboard' %}active{% endif %}">
+        <span class="icon">📊</span>
+        <span>Meu Painel</span>
+      </a>
+      <a href="{{ url_for('professor_quick_class') }}" class="bottom-nav-item highlight">
+        <div class="icon-wrapper">⚡</div>
+        <span>Nova Aula</span>
+      </a>
+      <a href="{{ url_for('professor_monthly_close') }}" class="bottom-nav-item {% if request.endpoint == 'professor_monthly_close' %}active{% endif %}">
+        <span class="icon">📅</span>
+        <span>Fechamento</span>
+      </a>
+      <a href="{{ url_for('logout') }}" class="bottom-nav-item">
+        <span class="icon">🚪</span>
+        <span>Sair</span>
+      </a>
+    {% elif current_user.is_admin %}
+      <a href="{{ url_for('admin_dashboard') }}" class="bottom-nav-item {% if request.endpoint == 'admin_dashboard' %}active{% endif %}">
+        <span class="icon">📊</span>
+        <span>Painel</span>
+      </a>
+      <a href="{{ url_for('admin_gallery') }}" class="bottom-nav-item {% if request.endpoint == 'admin_gallery' %}active{% endif %}">
+        <span class="icon">📸</span>
+        <span>Fotos</span>
+      </a>
+      <a href="{{ url_for('admin_reports') }}" class="bottom-nav-item {% if request.endpoint == 'admin_reports' %}active{% endif %}">
+        <span class="icon">📈</span>
+        <span>Relatórios</span>
+      </a>
+      <a href="{{ url_for('admin_students') }}" class="bottom-nav-item {% if request.endpoint == 'admin_students' %}active{% endif %}">
+        <span class="icon">👥</span>
+        <span>Alunos</span>
+      </a>
+      <a href="{{ url_for('logout') }}" class="bottom-nav-item">
+        <span class="icon">🚪</span>
+        <span>Sair</span>
+      </a>
+    {% endif %}
+  </nav>
+  {% endif %}
+
+  <!-- SCRIPTS -->
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/whatsapp.js') }}"></script>
+  {% block scripts %}{% endblock %}
+
+</body>
+</html>

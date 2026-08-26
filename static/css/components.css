@@ -1,0 +1,440 @@
+/* ==========================================================================
+   COMPONENTES ESPECÍFICOS: FLUXO DE AULAS, PRESENÇA, MODAIS E GALERIA
+   ========================================================================== */
+
+/* ==========================================================================
+   1. CARDS DE PRESENÇA RÁPIDA (TOUCH-FRIENDLY PARA QUADRA)
+   ========================================================================== */
+
+.attendance-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  background: var(--bg-surface-subtle);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.attendance-counter {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--primary-deep);
+}
+
+.attendance-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .attendance-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .attendance-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.student-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.1rem;
+  background: white;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+  min-height: 64px;
+}
+
+.student-card:active {
+  transform: scale(0.98);
+}
+
+.student-card.present {
+  background: #f0fdf4;
+  border-color: var(--success-emerald);
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.12);
+}
+
+.student-card.absent {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  opacity: 0.85;
+}
+
+.student-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.student-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-full);
+  background: var(--primary-light);
+  color: var(--primary-ocean);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+.student-card.present .student-avatar {
+  background: var(--success-light);
+  color: #065f46;
+}
+
+.student-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--primary-deep);
+}
+
+.student-group-tag {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.presence-status-pill {
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-full);
+  font-size: 0.78rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 90px;
+  justify-content: center;
+}
+
+.student-card.present .presence-status-pill {
+  background: var(--success-emerald);
+  color: white;
+}
+
+.student-card.absent .presence-status-pill {
+  background: #e2e8f0;
+  color: #64748b;
+}
+
+/* ==========================================================================
+   2. DROPZONE DE UPLOAD DE FOTO (CÂMERA NO CELULAR)
+   ========================================================================== */
+
+.photo-upload-zone {
+  border: 2px dashed #94a3b8;
+  border-radius: var(--radius-xl);
+  padding: 1.5rem 1rem;
+  text-align: center;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.photo-upload-zone:hover, .photo-upload-zone.dragover {
+  border-color: var(--primary-ocean);
+  background: var(--primary-light);
+}
+
+.upload-icon-circle {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 0.75rem auto;
+  border-radius: var(--radius-full);
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.85rem;
+  color: var(--primary-ocean);
+  box-shadow: var(--shadow-sm);
+}
+
+.photo-preview-container {
+  display: none;
+  margin-top: 1rem;
+  position: relative;
+}
+
+.photo-preview-container.active {
+  display: block;
+}
+
+.photo-preview-img {
+  max-width: 100%;
+  max-height: 280px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  box-shadow: var(--shadow-md);
+}
+
+.photo-preview-remove {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.75);
+  color: white;
+  border: none;
+  border-radius: var(--radius-full);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   3. MODAIS INTERATIVOS (LEMBRETES E WHATSAPP)
+   ========================================================================== */
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.modal-backdrop.show {
+  display: flex;
+  opacity: 1;
+}
+
+.modal-card {
+  background: white;
+  border-radius: var(--radius-xl);
+  max-width: 480px;
+  width: 100%;
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+  animation: modalScaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalScaleUp {
+  from { transform: scale(0.92); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.modal-header-custom {
+  padding: 1.5rem 1.5rem 1rem 1.5rem;
+  text-align: center;
+}
+
+.modal-icon-badge {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 1rem auto;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.25rem;
+}
+
+.modal-icon-badge.warning {
+  background: var(--warning-light);
+  color: #854d0e;
+  border: 4px solid #fef08a;
+}
+
+.modal-icon-badge.whatsapp {
+  background: #dcfce7;
+  color: #15803d;
+  border: 4px solid #bbf7d0;
+}
+
+.modal-title-custom {
+  font-size: 1.35rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.modal-body-custom {
+  padding: 0 1.5rem 1.5rem 1.5rem;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  text-align: center;
+}
+
+.modal-preview-box {
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  margin: 1rem 0;
+  font-style: italic;
+  color: var(--text-main);
+  text-align: left;
+}
+
+.modal-footer-custom {
+  padding: 1rem 1.5rem 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: var(--bg-page);
+  border-top: 1px solid var(--border-color);
+}
+
+@media (min-width: 480px) {
+  .modal-footer-custom.two-buttons {
+    flex-direction: row;
+  }
+}
+
+/* ==========================================================================
+   4. GALERIA CENTRAL DE FOTOS (FEED VISUAL)
+   ========================================================================== */
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .gallery-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .gallery-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.gallery-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+  display: flex;
+  flex-direction: column;
+}
+
+.gallery-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.gallery-image-container {
+  height: 220px;
+  position: relative;
+  background: #0f172a;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.gallery-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.gallery-card:hover .gallery-img {
+  transform: scale(1.04);
+}
+
+.gallery-status-overlay {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+}
+
+.gallery-date-overlay {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(15, 23, 42, 0.8);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-full);
+}
+
+.gallery-body {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  justify-content: space-between;
+}
+
+.gallery-arena-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--primary-deep);
+  margin-bottom: 0.25rem;
+}
+
+.gallery-meta {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.85rem;
+}
+
+/* ==========================================================================
+   5. FILTRO EM BARRA HORIZONTAL
+   ========================================================================== */
+
+.filter-bar {
+  background: white;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.filter-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .filter-form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .filter-form-grid {
+    grid-template-columns: repeat(5, 1fr);
+    align-items: flex-end;
+  }
+}

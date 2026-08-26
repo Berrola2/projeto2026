@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+
+{% block title %}Aula #{{ class_session.id }} - {{ class_session.arena.name }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+  
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
+    <a href="{{ url_for('professor_dashboard') }}" style="font-size: 0.9rem; font-weight: 700; color: var(--text-muted); display: inline-flex; align-items: center; gap: 0.35rem;">
+      &larr; Voltar para Meu Painel
+    </a>
+    
+    <span class="badge {{ class_session.status_badge_class }}" id="sessionStatusBadge" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
+      {{ class_session.status_icon }} {{ class_session.status_label }}
+    </span>
+  </div>
+
+  <!-- CABEÇALHO DA AULA -->
+  <div class="card" style="border-top: 5px solid var(--primary-ocean);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <span style="font-size: 0.85rem; font-weight: 700; color: var(--sand-warm); text-transform: uppercase;">
+          Registro de Treino em Quadra
+        </span>
+        <h1 style="font-size: 1.6rem; color: var(--primary-deep); margin-top: 0.2rem;">
+          {{ class_session.arena.name }}
+        </h1>
+        <div style="font-size: 1.05rem; font-weight: 700; color: var(--primary-ocean); margin-top: 0.25rem;">
+          Turma: {{ class_session.group_name }}
+        </div>
+      </div>
+
+      <div style="text-align: right;">
+        <div style="font-size: 1.1rem; font-weight: 800; color: var(--primary-deep);">
+          📅 {{ class_session.date|data_br }}
+        </div>
+        <div style="font-size: 0.95rem; color: var(--text-muted); font-weight: 600;">
+          ⏰ {{ class_session.time|hora_br }}
+        </div>
+      </div>
+    </div>
+
+    {% if class_session.observations %}
+      <div style="margin-top: 1rem; padding: 0.85rem 1rem; background: var(--bg-surface-subtle); border-radius: var(--radius-md); font-size: 0.9rem; color: var(--text-main);">
+        <strong>Observações do Professor:</strong> {{ class_session.observations }}
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- SEÇÃO DA FOTO DA AULA -->
+  <div class="card" id="uploadSection">
+    <div class="card-header">
+      <h2 class="card-title">
+        <span>📸</span> Foto Oficial da Aula
+      </h2>
+      {% if class_session.photos %}
+        <span class="badge badge-received">🟢 Foto Anexada</span>
+      {% else %}
+        <span class="badge badge-pending">🟡 Foto Pendente</span>
+      {% endif %}
+    </div>
+
+    {% if class_session.photos %}
+      <!-- Foto Existente -->
+      <div style="text-align: center; margin-bottom: 1.25rem;">
+        <img 
+          src="{{ url_for('static', filename='uploads/photos/' + class_session.photos[0].photo_path) }}" 
+          alt="Foto da Aula" 
+          style="max-width: 100%; max-height: 360px; border-radius: var(--radius-lg); object-fit: cover; box-shadow: var(--shadow-md);"
+        >
+        <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
+          Enviada em {{ class_session.photos[0].uploaded_at|data_hora_br }}
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+        <!-- Botão WhatsApp -->
+        <button 
+          type="button" 
+          class="btn btn-whatsapp btn-lg" 
+          style="flex: 1; max-width: 320px;"
+          onclick="abrirModal('whatsappModal')"
+        >
+          <span>📲</span> COMPARTILHAR NO WHATSAPP
+        </button>
+      </div>
+
+      <div style="margin-top: 1.5rem; border-top: 1px dashed var(--border-color); padding-top: 1rem;">
+        <details>
+          <summary style="cursor: pointer; font-size: 0.9rem; color: var(--text-muted); font-weight: 600;">
+            Deseja substituir ou atualizar a foto?
+          </summary>
+          <form method="POST" action="{{ url_for('professor_upload_photo', session_id=class_session.id) }}" enctype="multipart/form-data" style="margin-top: 1rem;">
+            <div class="form-group">
+              <input type="file" name="class_photo" accept="image/*" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-secondary btn-sm">Substituir Foto</button>
+          </form>
+        </details>
+      </div>
+
+    {% else %}
+      <!-- Sem Foto: Formulário de Upload Direto -->
+      <div style="background: var(--warning-light); border-left: 4px solid var(--warning-amber); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem;">
+        <strong style="color: #854d0e;">⚠️ Foto ainda não anexada para esta aula!</strong>
+        <p style="font-size: 0.9rem; color: #a16207; margin-top: 0.25rem;">
+          Anexe a foto da turma reunida em quadra para liberar o compartilhamento via WhatsApp e atualizar as métricas.
+        </p>
+      </div>
+
+      <form method="POST" action="{{ url_for('professor_upload_photo', session_id=class_session.id) }}" enctype="multipart/form-data">
+        <div class="form-group">
+          <label class="form-label">Selecione ou tire a foto da aula:</label>
+          <input type="file" name="class_photo" accept="image/*" capture="environment" class="form-control" required style="padding: 0.5rem;">
+        </div>
+
+        <button type="submit" class="btn btn-sand btn-lg btn-block">
+          <span>📸</span> Anexar Foto da Aula Agora
+        </button>
+      </form>
+    {% endif %}
+  </div>
+
+  <!-- LISTA DE PRESENÇA REGISTRADA -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">
+        <span>👥</span> Chamada Realizada
+      </h2>
+      <div style="font-weight: 800; font-size: 0.95rem; color: var(--primary-deep);">
+        Presentes: <span style="color: var(--success-emerald);">{{ class_session.present_count }}</span> / {{ class_session.total_students }} ({{ class_session.attendance_rate }}%)
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Aluno(a)</th>
+            <th>Turma</th>
+            <th>Telefone</th>
+            <th class="text-center">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for att in class_session.attendances %}
+            <tr>
+              <td class="font-bold">{{ att.student.name }}</td>
+              <td>{{ att.student.group_name or 'Geral' }}</td>
+              <td>{{ att.student.phone or '-' }}</td>
+              <td class="text-center">
+                {% if att.present %}
+                  <span style="display: inline-flex; align-items: center; gap: 0.25rem; font-weight: 700; color: #059669; background: var(--success-light); padding: 0.25rem 0.75rem; border-radius: var(--radius-full); font-size: 0.8rem;">
+                    🟢 Presente
+                  </span>
+                {% else %}
+                  <span style="display: inline-flex; align-items: center; gap: 0.25rem; font-weight: 700; color: #dc2626; background: var(--danger-light); padding: 0.25rem 0.75rem; border-radius: var(--radius-full); font-size: 0.8rem;">
+                    🔴 Ausente
+                  </span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==========================================================================
+     MODAL 1: FOTO DA AULA PENDENTE (ALERTA AO SALVAR SEM FOTO)
+     ========================================================================== -->
+<div class="modal-backdrop" id="photoPendingModal">
+  <div class="modal-card">
+    <div class="modal-header-custom">
+      <div class="modal-icon-badge warning">📸</div>
+      <h3 class="modal-title-custom" style="color: #854d0e;">FOTO DA AULA PENDENTE</h3>
+    </div>
+    
+    <div class="modal-body-custom">
+      <p style="margin-bottom: 0.75rem;">
+        A chamada da aula foi registrada com sucesso! No entanto, a <strong>foto da turma em quadra</strong> ainda não foi anexada.
+      </p>
+      <p style="font-size: 0.85rem; color: #64748b;">
+        Esta aula foi marcada como <span class="badge badge-pending">🟡 FOTO PENDENTE</span>. Você pode anexar a foto agora mesmo ou mais tarde no seu painel.
+      </p>
+    </div>
+
+    <div class="modal-footer-custom two-buttons">
+      <button type="button" class="btn btn-secondary" style="flex: 1;" data-close-modal>
+        Deixar para Depois
+      </button>
+      <button type="button" class="btn btn-sand" style="flex: 1;" onclick="fecharModal('photoPendingModal'); document.getElementById('uploadSection').scrollIntoView({behavior: 'smooth'});">
+        📸 Anexar Agora
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==========================================================================
+     MODAL 2: FOTO PRONTA PARA ENVIO (INTEGRAÇÃO WHATSAPP)
+     ========================================================================== -->
+<div class="modal-backdrop" id="whatsappModal">
+  <div class="modal-card">
+    <div class="modal-header-custom">
+      <div class="modal-icon-badge whatsapp">📲</div>
+      <h3 class="modal-title-custom" style="color: #15803d;">FOTO PRONTA PARA ENVIO</h3>
+    </div>
+
+    <div class="modal-body-custom">
+      <p>
+        A foto da aula foi recebida com sucesso! Compartilhe o registro oficial com a turma pelo WhatsApp:
+      </p>
+
+      <div class="modal-preview-box">
+        &ldquo;{{ whatsapp_message }}&rdquo;
+      </div>
+
+      <div style="font-size: 0.8rem; color: var(--text-muted);">
+        Ao clicar no botão abaixo, o WhatsApp será aberto com o texto pronto e o status da aula será atualizado para <span class="badge badge-ready">🔵 PREPARADO PARA ENVIO</span>.
+      </div>
+    </div>
+
+    <div class="modal-footer-custom">
+      <button 
+        type="button" 
+        class="btn btn-whatsapp btn-lg btn-block"
+        onclick="enviarParaWhatsApp({{ class_session.id }}, '{{ whatsapp_message|urlencode }}')"
+      >
+        <span>📲</span> ABRIR WHATSAPP
+      </button>
+      <button type="button" class="btn btn-secondary btn-sm" data-close-modal>
+        Fechar
+      </button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Dispara modal baseado na query string
+  {% if trigger_modal == 'photo_pending' %}
+    abrirModal('photoPendingModal');
+  {% elif trigger_modal == 'whatsapp_ready' %}
+    abrirModal('whatsappModal');
+  {% endif %}
+});
+</script>
+{% endblock %}

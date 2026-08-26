@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block title %}Meu Painel do Professor{% endblock %}
+
+{% block content %}
+<div class="dashboard-header" style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem;">
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <span style="font-size: 0.85rem; font-weight: 700; color: var(--sand-warm); text-transform: uppercase; letter-spacing: 0.05em;">
+        Quadra de Vôlei de Praia
+      </span>
+      <h1 style="font-size: 1.85rem; color: var(--primary-deep); margin-top: 0.15rem;">
+        Olá, Prof. {{ current_user.name }}! 🏐
+      </h1>
+      <p style="color: var(--text-muted); font-size: 0.95rem;">
+        Hoje é <strong>{{ today|data_br }}</strong>. Acompanhe suas turmas e faça registros rápidos em quadra.
+      </p>
+    </div>
+
+    <!-- BOTÃO DE AÇÃO RÁPIDA (DESTAQUE MÁXIMO) -->
+    <a href="{{ url_for('professor_quick_class') }}" class="btn btn-sand btn-lg" style="box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);">
+      <span style="font-size: 1.3rem;">⚡</span> REGISTRAR NOVA AULA
+    </a>
+  </div>
+</div>
+
+<!-- GRID DE KPIS / MÉTRICAS DO DIA -->
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-icon">📋</div>
+    <div class="kpi-label">Aulas Hoje</div>
+    <div class="kpi-value">{{ classes_today_count }}</div>
+    <div style="font-size: 0.75rem; color: var(--text-muted);">Sessões agendadas/dadas</div>
+  </div>
+
+  <div class="kpi-card emerald">
+    <div class="kpi-icon">👥</div>
+    <div class="kpi-label">Alunos Presentes</div>
+    <div class="kpi-value">{{ students_today_count }}</div>
+    <div style="font-size: 0.75rem; color: #059669;">Em quadra hoje</div>
+  </div>
+
+  <div class="kpi-card gold">
+    <div class="kpi-icon">🎯</div>
+    <div class="kpi-label">Taxa de Presença</div>
+    <div class="kpi-value">{{ rate_today }}%</div>
+    <div style="font-size: 0.75rem; color: #d97706;">Aproveitamento do dia</div>
+  </div>
+
+  <div class="kpi-card {% if pending_photos_count > 0 %}orange{% else %}emerald{% endif %}">
+    <div class="kpi-icon">📸</div>
+    <div class="kpi-label">Fotos Pendentes</div>
+    <div class="kpi-value">{{ pending_photos_count }}</div>
+    <div style="font-size: 0.75rem; color: {% if pending_photos_count > 0 %}#ea580c{% else %}#059669{% endif %};">
+      {{ 'Aguardando registro' if pending_photos_count > 0 else 'Tudo em dia!' }}
+    </div>
+  </div>
+</div>
+
+<!-- AULAS DE HOJE -->
+<div class="card" style="margin-bottom: 2rem;">
+  <div class="card-header">
+    <h2 class="card-title">
+      <span>🏖️</span> Aulas de Hoje ({{ today|data_br }})
+    </h2>
+    <a href="{{ url_for('professor_quick_class') }}" class="btn btn-primary btn-sm">
+      + Nova Aula
+    </a>
+  </div>
+
+  {% if today_classes %}
+    <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
+      {% for session in today_classes %}
+        <div style="border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.1rem; display: flex; flex-direction: column; gap: 0.75rem; background: var(--bg-surface-subtle);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+              <div style="font-weight: 800; font-size: 1.15rem; color: var(--primary-deep);">
+                {{ session.arena.name }} &bull; <span style="color: var(--primary-ocean);">{{ session.group_name }}</span>
+              </div>
+              <div style="font-size: 0.9rem; color: var(--text-muted);">
+                ⏰ Horário: <strong>{{ session.time|hora_br }}</strong> &bull; Presentes: <strong>{{ session.present_count }}/{{ session.total_students }} ({{ session.attendance_rate }}%)</strong>
+              </div>
+            </div>
+
+            <div>
+              <span class="badge {{ session.status_badge_class }}" id="statusBadge_{{ session.id }}">
+                {{ session.status_icon }} {{ session.status_label }}
+              </span>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.25rem;">
+            <a href="{{ url_for('professor_session_detail', session_id=session.id) }}" class="btn btn-secondary btn-sm" style="flex: 1;">
+              🔍 Ver Detalhes & Presença
+            </a>
+            
+            {% if session.photo_status == 'PENDING' %}
+              <a href="{{ url_for('professor_session_detail', session_id=session.id) }}#uploadSection" class="btn btn-sand btn-sm" style="flex: 1;">
+                📸 Enviar Foto
+              </a>
+            {% elif session.primary_photo %}
+              <a href="{{ url_for('professor_session_detail', session_id=session.id, trigger_modal='whatsapp_ready') }}" class="btn btn-whatsapp btn-sm" style="flex: 1;">
+                📲 WhatsApp
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);">
+      <div style="font-size: 3rem; margin-bottom: 0.75rem;">🏐</div>
+      <p style="font-size: 1.1rem; font-weight: 700; color: var(--primary-deep); margin-bottom: 0.25rem;">
+        Nenhuma aula registrada para hoje ainda.
+      </p>
+      <p style="font-size: 0.9rem; margin-bottom: 1.25rem;">
+        Ao terminar ou iniciar seu treino em quadra, registre a turma e a presença em menos de 1 minuto.
+      </p>
+      <a href="{{ url_for('professor_quick_class') }}" class="btn btn-sand">
+        ⚡ Iniciar Registro Rápido
+      </a>
+    </div>
+  {% endif %}
+</div>
+
+<!-- HISTÓRICO RECENTE DE AULAS -->
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title">
+      <span>📋</span> Últimas Aulas Ministradas
+    </h2>
+    <a href="{{ url_for('professor_monthly_close') }}" class="btn btn-outline btn-sm">
+      Ver Relatório do Mês
+    </a>
+  </div>
+
+  {% if recent_classes %}
+    <div class="table-responsive">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Horário</th>
+            <th>Arena</th>
+            <th>Turma</th>
+            <th>Presença</th>
+            <th>Status da Foto</th>
+            <th class="text-center">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for session in recent_classes %}
+            <tr>
+              <td class="font-bold">{{ session.date|data_br }}</td>
+              <td>{{ session.time|hora_br }}</td>
+              <td>{{ session.arena.name }}</td>
+              <td><span style="font-weight: 600; color: var(--primary-ocean);">{{ session.group_name }}</span></td>
+              <td>
+                <strong>{{ session.present_count }}/{{ session.total_students }}</strong>
+                <span class="text-muted" style="font-size: 0.8rem;">({{ session.attendance_rate }}%)</span>
+              </td>
+              <td>
+                <span class="badge {{ session.status_badge_class }}">
+                  {{ session.status_icon }} {{ session.status_label }}
+                </span>
+              </td>
+              <td class="text-center">
+                <a href="{{ url_for('professor_session_detail', session_id=session.id) }}" class="btn btn-secondary btn-sm">
+                  Abrir
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p style="text-align: center; color: var(--text-muted); padding: 1.5rem;">Nenhum registro anterior encontrado.</p>
+  {% endif %}
+</div>
+{% endblock %}

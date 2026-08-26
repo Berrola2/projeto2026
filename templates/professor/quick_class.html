@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block title %}Registro Rápido de Aula{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+  
+  <div style="margin-bottom: 1.25rem;">
+    <a href="{{ url_for('professor_dashboard') }}" style="font-size: 0.9rem; font-weight: 700; color: var(--text-muted); display: inline-flex; align-items: center; gap: 0.35rem; margin-bottom: 0.5rem;">
+      &larr; Voltar para Meu Painel
+    </a>
+    <h1 style="font-size: 1.75rem; color: var(--primary-deep);">
+      ⚡ Registro Rápido de Aula (< 1 min)
+    </h1>
+    <p style="color: var(--text-muted); font-size: 0.95rem;">
+      Selecione a quadra, turma, marque a chamada com 1 toque e anexe a foto.
+    </p>
+  </div>
+
+  <form method="POST" action="{{ url_for('professor_quick_class') }}" enctype="multipart/form-data" id="quickClassForm">
+    
+    <!-- 1. DADOS BÁSICOS DA AULA -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          <span>🏖️</span> Informações da Aula
+        </h2>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
+        
+        <!-- Seleção de Arena -->
+        <div class="form-group" style="margin-bottom: 0;">
+          <label for="arenaSelect" class="form-label">Arena / Quadra *</label>
+          <select id="arenaSelect" name="arena_id" class="form-select" required style="font-weight: 700; color: var(--primary-deep);">
+            {% for arena in arenas %}
+              <option value="{{ arena.id }}" {% if arena.id == selected_arena_id %}selected{% endif %}>
+                {{ arena.name }} ({{ arena.location }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <!-- Turma -->
+          <div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1;">
+            <label for="groupNameInput" class="form-label">Turma / Categoria *</label>
+            <input 
+              type="text" 
+              list="turmasList" 
+              id="groupNameInput" 
+              name="group_name" 
+              class="form-control" 
+              placeholder="Ex: Iniciante Manhã, Intermediário Noite..." 
+              value="Iniciante Manhã" 
+              required
+            >
+            <datalist id="turmasList">
+              {% for turma in turmas_padrao %}
+                <option value="{{ turma }}">
+              {% endfor %}
+            </datalist>
+          </div>
+
+          <!-- Data -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="classDate" class="form-label">Data da Aula *</label>
+            <input 
+              type="date" 
+              id="classDate" 
+              name="date" 
+              class="form-control" 
+              value="{{ default_date }}" 
+              required
+            >
+          </div>
+
+          <!-- Horário -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="classTime" class="form-label">Horário de Início *</label>
+            <input 
+              type="time" 
+              id="classTime" 
+              name="time" 
+              class="form-control" 
+              value="{{ default_time }}" 
+              required
+            >
+          </div>
+        </div>
+
+        <!-- Observações Opcionais -->
+        <div class="form-group" style="margin-bottom: 0; margin-top: 0.5rem;">
+          <label for="observations" class="form-label">Observações da Aula (Opcional)</label>
+          <input 
+            type="text" 
+            id="observations" 
+            name="observations" 
+            class="form-control" 
+            placeholder="Ex: Treino de saque e defesa. Sol forte em quadra."
+          >
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 2. LISTA DE CHAMADA / PRESENÇA (1-CLICK TOGGLE) -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          <span>👥</span> Lista de Presença
+        </h2>
+        <div style="display: flex; gap: 0.5rem;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btnMarkAll">
+            ✅ Todos Presentes
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" id="btnUnmarkAll">
+            ❌ Todos Ausentes
+          </button>
+        </div>
+      </div>
+
+      <!-- Barra de Resumo de Presença -->
+      <div class="attendance-header">
+        <div class="attendance-counter">
+          Presentes: <span id="presentCounter" style="color: var(--success-emerald); font-size: 1.15rem;">0</span> de <span id="totalCounter">0</span>
+        </div>
+        <div style="font-weight: 800; color: var(--primary-deep); font-size: 1.05rem;">
+          Taxa: <span id="rateCounter" style="color: var(--sand-warm);">100%</span>
+        </div>
+      </div>
+
+      <!-- Grade de Cards de Alunos -->
+      <div class="attendance-grid" id="attendanceGrid">
+        {% if initial_students %}
+          {% for student in initial_students %}
+            <div class="student-card present" data-student-id="{{ student.id }}">
+              <div class="student-info">
+                <div class="student-avatar">{{ student.name[:1]|upper }}</div>
+                <div>
+                  <div class="student-name">{{ student.name }}</div>
+                  <div class="student-group-tag">{{ student.group_name or 'Geral' }}</div>
+                </div>
+              </div>
+              <div class="presence-status-pill">🟢 Presente</div>
+              <input type="hidden" name="present_student_{{ student.id }}" value="1">
+            </div>
+          {% endfor %}
+        {% else %}
+          <div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--text-muted); background: var(--bg-surface-subtle); border-radius: var(--radius-md);">
+            Nenhum aluno cadastrado para esta arena. Os alunos podem ser cadastrados pela administração.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- 3. FOTO DA AULA (CÂMERA NO CELULAR / GALERIA) -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          <span>📸</span> Foto da Aula em Quadra
+        </h2>
+        <span style="font-size: 0.8rem; color: var(--text-muted);">Opcional agora (pode enviar depois)</span>
+      </div>
+
+      <input 
+        type="file" 
+        id="classPhotoInput" 
+        name="class_photo" 
+        accept="image/*" 
+        capture="environment"
+        style="display: none;"
+      >
+
+      <div class="photo-upload-zone" id="photoUploadZone">
+        <div class="upload-icon-circle">📷</div>
+        <div style="font-weight: 700; font-size: 1.1rem; color: var(--primary-deep); margin-bottom: 0.25rem;">
+          Tirar Foto ou Escolher da Galeria
+        </div>
+        <div style="font-size: 0.85rem; color: var(--text-muted);">
+          Toque para abrir a câmera do celular ou selecionar imagem (JPG, PNG, WEBP)
+        </div>
+      </div>
+
+      <!-- Preview da Foto -->
+      <div class="photo-preview-container" id="photoPreviewContainer">
+        <img src="" alt="Prévia da Foto" class="photo-preview-img" id="photoPreviewImg">
+        <button type="button" class="photo-preview-remove" id="btnRemovePhoto" title="Remover Foto">&times;</button>
+        <div style="text-align: center; margin-top: 0.5rem; font-size: 0.85rem; color: var(--success-emerald); font-weight: 700;">
+          🟢 Foto selecionada com sucesso!
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTÃO FINAL DE SUBMISSÃO (EXTRA GRANDE) -->
+    <div style="margin: 2rem 0;">
+      <button type="submit" class="btn btn-sand btn-block btn-lg" style="box-shadow: 0 10px 25px rgba(245, 158, 11, 0.45); font-size: 1.25rem;">
+        <span>💾</span> SALVAR AULA E PRESENÇAS
+      </button>
+      <div style="text-align: center; margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">
+        ⏱️ Leva menos de 1 minuto. Todos os dados são sincronizados com a arena.
+      </div>
+    </div>
+
+  </form>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/quick_class.js') }}"></script>
+{% endblock %}

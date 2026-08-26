@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatórios de Gestão - {{ selected_month|mes_nome_br }}/{{ selected_year }}{% endblock %}
+
+{% block content %}
+<div>
+  
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+    <div>
+      <span style="font-size: 0.85rem; font-weight: 700; color: #0284c7; text-transform: uppercase; letter-spacing: 0.05em;">
+        Auditoria e Desempenho
+      </span>
+      <h1 style="font-size: 1.85rem; color: var(--primary-deep); margin-top: 0.15rem;">
+        Relatórios Administrativos 📈
+      </h1>
+      <p style="color: var(--text-muted); font-size: 0.95rem;">
+        Consolidado de frequência, cumprimento de aulas e entrega de fotos por professor e por arena.
+      </p>
+    </div>
+
+    <!-- FILTRO E EXPORTAÇÃO CSV -->
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+      <form method="GET" action="{{ url_for('admin_reports') }}" style="display: flex; gap: 0.5rem; background: white; padding: 0.4rem 0.6rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+        <select name="mes" class="form-select" style="min-height: 40px; padding: 0.4rem 0.75rem; font-weight: 700;">
+          {% for m in range(1, 13) %}
+            <option value="{{ m }}" {% if m == selected_month %}selected{% endif %}>
+              {{ m|mes_nome_br }}
+            </option>
+          {% endfor %}
+        </select>
+
+        <select name="ano" class="form-select" style="min-height: 40px; padding: 0.4rem 0.75rem; font-weight: 700;">
+          {% for y in anos_disponiveis %}
+            <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>
+              {{ y }}
+            </option>
+          {% endfor %}
+        </select>
+
+        <button type="submit" class="btn btn-primary btn-sm" style="min-height: 40px;">
+          Filtrar
+        </button>
+      </form>
+
+      <!-- BOTÃO EXPORTAÇÃO CSV -->
+      <a href="{{ url_for('admin_export_csv', mes=selected_month, ano=selected_year) }}" class="btn btn-sand" style="min-height: 48px;">
+        <span>📥</span> EXPORTAR CSV
+      </a>
+    </div>
+  </div>
+
+  <!-- 1. RELATÓRIO POR PROFESSOR -->
+  <div class="card" style="margin-bottom: 2rem;">
+    <div class="card-header">
+      <h2 class="card-title">
+        <span>👨‍🏫</span> Desempenho por Professor ({{ selected_month|mes_nome_br }}/{{ selected_year }})
+      </h2>
+    </div>
+
+    <div class="table-responsive">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Professor(a)</th>
+            <th>E-mail</th>
+            <th>Aulas Dadas</th>
+            <th>Presenças Totais</th>
+            <th>Faltas</th>
+            <th>Taxa Média (%)</th>
+            <th>Fotos Registradas</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in prof_reports %}
+            <tr>
+              <td class="font-bold">{{ r.professor.name }}</td>
+              <td style="font-size: 0.85rem; color: var(--text-muted);">{{ r.professor.email }}</td>
+              <td><strong>{{ r.total_classes }}</strong> aulas</td>
+              <td><span style="color: var(--success-emerald); font-weight: 700;">{{ r.total_presents }}</span></td>
+              <td><span style="color: var(--danger-crimson);">{{ r.total_absents }}</span></td>
+              <td>
+                <span style="font-weight: 800; color: {% if r.rate >= 80 %}#059669{% elif r.rate >= 60 %}#d97706{% else %}#dc2626{% endif %};">
+                  {{ r.rate }}%
+                </span>
+              </td>
+              <td>
+                <span class="badge {% if r.photos_count >= r.total_classes and r.total_classes > 0 %}badge-received{% else %}badge-pending{% endif %}">
+                  📸 {{ r.photos_count }} / {{ r.total_classes }}
+                </span>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 2. RELATÓRIO POR ARENA -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">
+        <span>🏖️</span> Desempenho por Arena ({{ selected_month|mes_nome_br }}/{{ selected_year }})
+      </h2>
+    </div>
+
+    <div class="table-responsive">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Arena</th>
+            <th>Localização</th>
+            <th>Alunos Matriculados</th>
+            <th>Aulas Realizadas</th>
+            <th>Presenças Computadas</th>
+            <th>Frequência Média (%)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in arena_reports %}
+            <tr>
+              <td class="font-bold">{{ r.arena.name }}</td>
+              <td style="font-size: 0.85rem; color: var(--text-muted);">{{ r.arena.location }}</td>
+              <td><strong>{{ r.total_students }}</strong> alunos</td>
+              <td><strong>{{ r.total_classes }}</strong> aulas</td>
+              <td><span style="color: var(--success-emerald); font-weight: 700;">{{ r.total_presents }}</span></td>
+              <td>
+                <span style="font-weight: 800; color: {% if r.rate >= 80 %}#059669{% elif r.rate >= 60 %}#d97706{% else %}#dc2626{% endif %};">
+                  {{ r.rate }}%
+                </span>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Página Não Encontrada (404){% endblock %}
+
+{% block content %}
+<div style="max-width: 520px; margin: 3rem auto; text-align: center;">
+  
+  <div style="font-size: 3.5rem; margin-bottom: 0.5rem;">🏖️</div>
+
+  <h1 style="font-size: 1.75rem; color: var(--primary-deep); margin-bottom: 0.5rem;">
+    Página Não Encontrada (404)
+  </h1>
+
+  <div class="card" style="padding: 1.75rem; margin-top: 1rem;">
+    <p style="font-size: 1rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+      A página que você tentou acessar não existe ou foi movida.
+    </p>
+
+    <a href="{{ url_for('index') }}" class="btn btn-primary btn-block">
+      <span>🏠</span> Ir para o Início
+    </a>
+  </div>
+
+</div>
+{% endblock %}
