@@ -352,7 +352,7 @@ const App = {
   },
 
   // ----------------------------------------------------
-  // LOGIN (SEM CADASTRO PÚBLICO E COM ATALHOS LIMPOS)
+  // LOGIN
   // ----------------------------------------------------
   renderLogin() {
     const container = document.getElementById('loginView');
@@ -772,7 +772,25 @@ const App = {
     }
     document.getElementById('new_mgr_name').value = '';
     document.getElementById('new_mgr_phone').value = '';
+    this.updateNewManagerPreview();
     this.openModal('newManagerModal');
+  },
+
+  updateNewManagerPreview() {
+    const name = document.getElementById('new_mgr_name')?.value || '';
+    const select = document.getElementById('new_mgr_arena');
+    const previewInput = document.getElementById('new_mgr_email_preview');
+    if (!previewInput || !select) return;
+
+    const selectedArenaId = select.value;
+    const arena = window.store.getArenaById(selectedArenaId);
+    const arenaName = arena ? arena.name : 'Arena';
+
+    if (name.trim()) {
+      previewInput.value = window.store.generateEmail(name, arenaName, 'ADMIN');
+    } else {
+      previewInput.value = `(nome).(arena)@adm.com`;
+    }
   },
 
   handleCreateManager(event) {
@@ -982,7 +1000,7 @@ const App = {
   },
 
   // ----------------------------------------------------
-  // GESTÃO DE PROFESSORES: MODALIDADES, SENHA INICIAL & DEMISSÃO
+  // GESTÃO DE PROFESSORES: ARENAS, MODALIDADES E SENHA INICIAL
   // ----------------------------------------------------
   renderProfessores() {
     const container = document.getElementById('professoresView');
@@ -1023,7 +1041,7 @@ const App = {
                   <th>Modalidade</th>
                   <th>Login (@prof.com)</th>
                   <th>Telefone</th>
-                  <th>Aulas Dadas</th>
+                  <th>Alunos / Aulas</th>
                   <th class="text-center">Ações / Credenciais</th>
                 </tr>
               </thead>
@@ -1031,6 +1049,7 @@ const App = {
                 ${professors.length > 0 ? professors.map(p => {
                   const pArena = window.store.getArenaById(p.arenaId)?.name || 'Arena';
                   const clsCount = window.store.state.classes.filter(c => c.professorId === p.id).length;
+                  const stCount = window.store.state.students.filter(s => s.professorId === p.id).length;
                   const initial = p.name ? p.name.charAt(0).toUpperCase() : 'P';
                   const modality = p.modality || 'Vôlei de Praia 🏐';
 
@@ -1052,7 +1071,9 @@ const App = {
                       </td>
                       <td><code style="font-weight:800; color:#0369a1;">${p.email}</code></td>
                       <td>${p.phone ? App.maskPhone(p.phone) : '-'}</td>
-                      <td><strong>${clsCount}</strong> aulas</td>
+                      <td>
+                        <strong>${stCount}</strong> alunos &bull; <strong>${clsCount}</strong> aulas
+                      </td>
                       <td class="text-center">
                         <div style="display: inline-flex; gap: 0.4rem;">
                           <button class="btn btn-whatsapp btn-sm" onclick="App.openCredentialsModal(${p.id})" title="Ver e Encaminhar Acesso">
@@ -1084,11 +1105,26 @@ const App = {
 
   openNewProfModal() {
     const user = window.store.getCurrentUser();
-    const arena = user.arenaId ? window.store.getArenaById(user.arenaId) : window.store.state.arenas[0];
-    const arenaName = arena ? arena.name : 'Arena';
-
+    const arenaSelectGroup = document.getElementById('new_prof_arena_select_group');
+    const arenaFixedLabel = document.getElementById('new_prof_arena_fixed_label');
+    const arenaSelect = document.getElementById('new_prof_arena_select');
     const modalArenaSpan = document.getElementById('new_prof_arena_label');
-    if (modalArenaSpan) modalArenaSpan.textContent = arenaName;
+
+    if (user.role === 'SUPER_ADMIN') {
+      // Para o Dev, exibe seletor de arena
+      if (arenaSelectGroup) arenaSelectGroup.style.display = 'block';
+      if (arenaFixedLabel) arenaFixedLabel.style.display = 'none';
+      if (arenaSelect) {
+        const arenas = window.store.getAllArenasGlobal();
+        arenaSelect.innerHTML = arenas.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+      }
+    } else {
+      // Para o Gestor, fixa na arena dele
+      if (arenaSelectGroup) arenaSelectGroup.style.display = 'none';
+      if (arenaFixedLabel) arenaFixedLabel.style.display = 'block';
+      const arena = window.store.getArenaById(user.arenaId);
+      if (modalArenaSpan) modalArenaSpan.textContent = arena ? arena.name : 'Arena';
+    }
 
     const nameInput = document.getElementById('new_prof_name');
     const emailInput = document.getElementById('new_prof_email');
@@ -1097,6 +1133,7 @@ const App = {
     if (emailInput) emailInput.value = '';
     if (passInput) passInput.value = '';
 
+    this.updateNewProfEmailPreview();
     this.openModal('newProfModal');
   },
 
@@ -1107,29 +1144,45 @@ const App = {
     if (!nameInput || !emailInput) return;
 
     const user = window.store.getCurrentUser();
-    const arena = user.arenaId ? window.store.getArenaById(user.arenaId) : window.store.state.arenas[0];
-    const arenaName = arena ? arena.name : 'ilha';
+    let arenaName = 'arena';
+
+    if (user.role === 'SUPER_ADMIN') {
+      const select = document.getElementById('new_prof_arena_select');
+      const arenaId = select ? select.value : 1;
+      const arenaObj = window.store.getArenaById(arenaId);
+      arenaName = arenaObj ? arenaObj.name : 'arena';
+    } else {
+      const arenaObj = window.store.getArenaById(user.arenaId);
+      arenaName = arenaObj ? arenaObj.name : 'arena';
+    }
 
     const autoEmail = window.store.generateEmail(nameInput.value, arenaName, 'PROFESSOR');
     emailInput.value = autoEmail;
 
     if (passInput) {
       const firstName = (nameInput.value.trim().split(' ')[0] || 'prof').toLowerCase();
-      passInput.value = `${firstName}.***** (5 dígitos aleatórios gerados ao salvar)`;
+      passInput.value = `${firstName}.***** (5 dígitos gerados ao salvar)`;
     }
   },
 
   handleCreateProf(event) {
     event.preventDefault();
+    const user = window.store.getCurrentUser();
     const name = document.getElementById('new_prof_name').value;
     const modality = document.getElementById('new_prof_modality').value;
     const phone = document.getElementById('new_prof_phone').value;
 
-    const res = window.store.addProfessor({ name, modality, phone });
+    let arenaId = user.arenaId;
+    if (user.role === 'SUPER_ADMIN') {
+      arenaId = document.getElementById('new_prof_arena_select')?.value || 1;
+    }
+
+    const res = window.store.addProfessor({ name, arenaId, modality, phone });
     if (res.success) {
       this.closeModal('newProfModal');
       this.showToast('Professor cadastrado com sucesso!', 'success');
-      this.renderProfessores();
+      if (this.currentRoute === '#/professores') this.renderProfessores();
+      else if (this.currentRoute === '#/dev') this.renderSuperAdminDashboard();
       this.showCreatedCredentialsModal(res.professor, res.generatedPassword);
     } else {
       this.showToast(res.error, 'danger');
@@ -1190,6 +1243,164 @@ const App = {
   },
 
   // ----------------------------------------------------
+  // GESTÃO DE ALUNOS (COM VÍNCULO AO PROFESSOR)
+  // ----------------------------------------------------
+  openNewStudentModal() {
+    const user = window.store.getCurrentUser();
+    const arenaGroup = document.getElementById('new_st_arena_group');
+    const arenaSelect = document.getElementById('new_st_arena');
+
+    if (user.role === 'SUPER_ADMIN') {
+      if (arenaGroup) arenaGroup.style.display = 'block';
+      if (arenaSelect) {
+        const arenas = window.store.getAllArenasGlobal();
+        arenaSelect.innerHTML = arenas.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+      }
+    } else {
+      if (arenaGroup) arenaGroup.style.display = 'none';
+    }
+
+    document.getElementById('new_st_name').value = '';
+    document.getElementById('new_st_phone').value = '';
+    document.getElementById('new_st_group').value = 'Iniciante Manhã';
+
+    this.handleNewStudentArenaChange();
+    this.openModal('newStudentModal');
+  },
+
+  handleNewStudentArenaChange() {
+    const user = window.store.getCurrentUser();
+    const profSelect = document.getElementById('new_st_professor');
+    if (!profSelect) return;
+
+    let arenaId = user.arenaId;
+    if (user.role === 'SUPER_ADMIN') {
+      arenaId = Number(document.getElementById('new_st_arena')?.value || 1);
+    }
+
+    const professors = window.store.getProfessors(arenaId);
+    if (professors.length > 0) {
+      profSelect.innerHTML = professors.map(p => `
+        <option value="${p.id}" ${user.role === 'PROFESSOR' && user.id === p.id ? 'selected' : ''}>
+          👨‍🏫 ${p.name} (${p.modality || 'Vôlei'})
+        </option>
+      `).join('');
+    } else {
+      profSelect.innerHTML = `<option value="0">Nenhum professor cadastrado nesta arena</option>`;
+    }
+  },
+
+  handleCreateStudent(event) {
+    event.preventDefault();
+    const user = window.store.getCurrentUser();
+    const name = document.getElementById('new_st_name').value;
+    const groupName = document.getElementById('new_st_group').value;
+    const phone = document.getElementById('new_st_phone').value;
+    const professorId = document.getElementById('new_st_professor')?.value || 0;
+
+    let arenaId = user.arenaId;
+    if (user.role === 'SUPER_ADMIN') {
+      arenaId = document.getElementById('new_st_arena')?.value || 1;
+    }
+
+    window.store.addStudent({ name, arenaId, professorId, groupName, phone });
+    this.closeModal('newStudentModal');
+    this.showToast('Aluno cadastrado com sucesso!', 'success');
+    this.renderStudents();
+  },
+
+  renderStudents() {
+    const container = document.getElementById('studentsView');
+    if (!container) return;
+
+    const user = window.store.getCurrentUser();
+    const students = window.store.getStudents();
+    const arena = user.arenaId ? window.store.getArenaById(user.arenaId) : null;
+    const arenaName = arena ? arena.name : (user.role === 'SUPER_ADMIN' ? 'Todas as Arenas (Global)' : 'Minha Arena');
+
+    container.innerHTML = `
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+          <div>
+            <span style="font-size: 0.85rem; font-weight: 800; color: #0284c7; text-transform: uppercase; letter-spacing: 0.05em;">
+              ${arenaName}
+            </span>
+            <h1 style="font-size: 1.85rem; color: var(--primary-deep); margin-top: 0.15rem;">
+              Gestão de Alunos & Turmas 👥
+            </h1>
+            <p style="color: var(--text-muted); font-size: 0.95rem;">
+              Total de <strong>${students.length}</strong> alunos matriculados vinculados aos professores.
+            </p>
+          </div>
+
+          <button class="btn btn-sand" onclick="App.openNewStudentModal()">
+            <span>➕</span> Novo Aluno
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Nome do Aluno</th>
+                  <th>Arena</th>
+                  <th>Professor Responsável</th>
+                  <th>Turma</th>
+                  <th>Telefone</th>
+                  <th class="text-center">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${students.length > 0 ? students.map(s => {
+                  const sArena = window.store.getArenaById(s.arenaId)?.name || 'Arena';
+                  const sProf = window.store.getProfessorById(s.professorId);
+                  const profName = sProf ? sProf.name : 'Geral da Arena';
+
+                  return `
+                    <tr>
+                      <td class="font-bold">${s.name}</td>
+                      <td><span style="font-weight: 700; color: var(--text-muted);">📍 ${sArena}</span></td>
+                      <td>
+                        <span class="badge" style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0;">
+                          👨‍🏫 ${profName}
+                        </span>
+                      </td>
+                      <td><span style="font-weight:700; color:var(--primary-ocean);">${s.groupName || 'Geral'}</span></td>
+                      <td>${s.phone ? App.maskPhone(s.phone) : '-'}</td>
+                      <td class="text-center">
+                        <button class="btn btn-secondary btn-sm" style="color:#ef4444;" onclick="App.deleteStudent(${s.id})" title="Excluir Aluno">
+                          🗑️
+                        </button>
+                      </td>
+                    </tr>
+                  `;
+                }).join('') : `
+                  <tr>
+                    <td colspan="6" class="text-center text-muted" style="padding: 2.5rem;">
+                      Nenhum aluno cadastrado.
+                    </td>
+                  </tr>
+                `}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+
+    this.showView('studentsView');
+  },
+
+  deleteStudent(id) {
+    if (confirm('Deseja realmente remover este aluno?')) {
+      window.store.deleteStudent(id);
+      this.showToast('Aluno removido com sucesso.', 'info');
+      this.renderStudents();
+    }
+  },
+
+  // ----------------------------------------------------
   // PAINEL DO PROFESSOR (MEU PAINEL)
   // ----------------------------------------------------
   renderProfessorDashboard() {
@@ -1206,6 +1417,7 @@ const App = {
     const myClasses = window.store.getClasses({ professorId: user.id });
     const todayClasses = myClasses.filter(c => c.date === today);
     const pendingPhotos = myClasses.filter(c => c.photoStatus === 'PENDING').length;
+    const myStudents = window.store.getStudents();
 
     let studentsToday = 0;
     let totalSlotsToday = 0;
@@ -1229,7 +1441,7 @@ const App = {
               Olá, Prof. ${user.name}! 🏐
             </h1>
             <p style="color: var(--text-muted); font-size: 0.95rem;">
-              Hoje é <strong>${todayBr}</strong>. Faça chamadas e envie fotos das suas turmas da <strong>${arenaName}</strong>.
+              Hoje é <strong>${todayBr}</strong>. Você possui <strong>${myStudents.length} alunos</strong> vinculados à sua turma.
             </p>
           </div>
 
@@ -1250,9 +1462,9 @@ const App = {
 
         <div class="kpi-card emerald">
           <div class="kpi-icon">👥</div>
-          <div class="kpi-label">Alunos em Quadra</div>
-          <div class="kpi-value">${studentsToday}</div>
-          <div style="font-size: 0.75rem; color: #059669;">Presentes hoje</div>
+          <div class="kpi-label">Meus Alunos</div>
+          <div class="kpi-value">${myStudents.length}</div>
+          <div style="font-size: 0.75rem; color: #059669;">Em sua grade</div>
         </div>
 
         <div class="kpi-card gold">
@@ -1602,87 +1814,6 @@ const App = {
     `;
 
     this.showView('adminDashboardView');
-  },
-
-  // ----------------------------------------------------
-  // GESTÃO DE ALUNOS (ISOLADA POR ARENA OU GLOBAL PARA DEV)
-  // ----------------------------------------------------
-  renderStudents() {
-    const container = document.getElementById('studentsView');
-    if (!container) return;
-
-    const user = window.store.getCurrentUser();
-    const students = window.store.getStudents();
-    const arena = user.arenaId ? window.store.getArenaById(user.arenaId) : null;
-    const arenaName = arena ? arena.name : (user.role === 'SUPER_ADMIN' ? 'Todas as Arenas (Global)' : 'Minha Arena');
-
-    container.innerHTML = `
-      <div>
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
-          <div>
-            <span style="font-size: 0.85rem; font-weight: 800; color: #0284c7; text-transform: uppercase; letter-spacing: 0.05em;">
-              ${arenaName}
-            </span>
-            <h1 style="font-size: 1.85rem; color: var(--primary-deep); margin-top: 0.15rem;">
-              Gestão de Alunos & Turmas 👥
-            </h1>
-            <p style="color: var(--text-muted); font-size: 0.95rem;">
-              Total de <strong>${students.length}</strong> alunos matriculados.
-            </p>
-          </div>
-
-          <button class="btn btn-sand" onclick="App.openModal('newStudentModal')">
-            <span>➕</span> Novo Aluno
-          </button>
-        </div>
-
-        <div class="card">
-          <div class="table-responsive">
-            <table class="custom-table">
-              <thead>
-                <tr>
-                  <th>Nome do Aluno</th>
-                  <th>Arena</th>
-                  <th>Turma</th>
-                  <th>Telefone</th>
-                  <th>E-mail</th>
-                  <th class="text-center">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${students.map(s => {
-                  const sArena = window.store.getArenaById(s.arenaId)?.name || 'Arena';
-                  return `
-                    <tr>
-                      <td class="font-bold">${s.name}</td>
-                      <td><span style="font-weight: 700; color: var(--text-muted);">📍 ${sArena}</span></td>
-                      <td><span style="font-weight:700; color:var(--primary-ocean);">${s.groupName || 'Geral'}</span></td>
-                      <td>${s.phone ? App.maskPhone(s.phone) : '-'}</td>
-                      <td style="color:var(--text-muted); font-size:0.85rem;">${s.email || '-'}</td>
-                      <td class="text-center">
-                        <button class="btn btn-secondary btn-sm" style="color:#ef4444;" onclick="App.deleteStudent(${s.id})" title="Excluir Aluno">
-                          🗑️
-                        </button>
-                      </td>
-                    </tr>
-                  `;
-                }).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    `;
-
-    this.showView('studentsView');
-  },
-
-  deleteStudent(id) {
-    if (confirm('Deseja realmente remover este aluno?')) {
-      window.store.deleteStudent(id);
-      this.showToast('Aluno removido com sucesso.', 'info');
-      this.renderStudents();
-    }
   },
 
   // ----------------------------------------------------

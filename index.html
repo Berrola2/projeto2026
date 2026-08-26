@@ -134,24 +134,28 @@
     <div class="modal-card">
       <div class="modal-header-custom" style="padding-bottom: 0;">
         <h2 class="modal-title-custom" style="color: var(--primary-deep);">➕ Cadastrar Novo Aluno</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">
+          Vincule o aluno a uma arena e ao professor responsável.
+        </p>
       </div>
       <form onsubmit="App.handleCreateStudent(event)">
         <div style="padding: 1.25rem 1.5rem;">
           <div class="form-group">
-            <label class="form-label">Nome Completo *</label>
+            <label class="form-label">Nome Completo do Aluno *</label>
             <input type="text" id="new_st_name" class="form-control" placeholder="Ex: Rodrigo Alves" required>
           </div>
           <div class="form-group" id="new_st_arena_group">
             <label class="form-label">Arena *</label>
-            <select id="new_st_arena" class="form-select" required>
-              <option value="1">Arena Ilha</option>
-              <option value="2">Arena Maroka</option>
-              <option value="3">Arena Ipanema Beach</option>
-              <option value="4">Arena Copacabana Sun</option>
+            <select id="new_st_arena" class="form-select" required onchange="App.handleNewStudentArenaChange()">
+            </select>
+          </div>
+          <div class="form-group" id="new_st_prof_group">
+            <label class="form-label">Professor Responsável *</label>
+            <select id="new_st_professor" class="form-select" required style="font-weight: 700; color: var(--primary-ocean);">
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Turma / Categoria *</label>
+            <label class="form-label">Turma / Horário *</label>
             <input type="text" id="new_st_group" class="form-control" placeholder="Ex: Iniciante Manhã, Intermediário..." value="Iniciante Manhã" required>
           </div>
           <div class="form-group">
@@ -215,18 +219,25 @@
     </div>
   </div>
 
-  <!-- MODAL: NOVO PROFESSOR (COM MODALIDADE E GERAÇÃO AUTOMÁTICA) -->
+  <!-- MODAL: NOVO PROFESSOR (COM SELETOR DE ARENA PARA DEV E LOCK PARA GESTOR) -->
   <div class="modal-backdrop" id="newProfModal">
     <div class="modal-card">
       <div class="modal-header-custom" style="padding-bottom: 0;">
         <h2 class="modal-title-custom" style="color: var(--primary-deep);">👨‍🏫 Cadastrar Novo Professor</h2>
-        <p style="font-size: 0.85rem; color: var(--text-muted);">
+        <p style="font-size: 0.85rem; color: var(--text-muted);" id="new_prof_arena_fixed_label">
           Arena vinculada: <strong id="new_prof_arena_label" style="color: var(--primary-ocean);">Arena Ilha</strong>
         </p>
       </div>
       <form onsubmit="App.handleCreateProf(event)">
         <div style="padding: 1.25rem 1.5rem;">
           
+          <!-- SELETOR DE ARENA (VISÍVEL APENAS PARA DEV/SUPER_ADMIN) -->
+          <div class="form-group" id="new_prof_arena_select_group" style="display: none;">
+            <label class="form-label">Arena de Atuação do Professor *</label>
+            <select id="new_prof_arena_select" class="form-select" onchange="App.updateNewProfEmailPreview()" style="font-weight: 700; color: var(--primary-ocean);">
+            </select>
+          </div>
+
           <div class="form-group">
             <label class="form-label">Nome Completo do Professor *</label>
             <input 
@@ -267,7 +278,7 @@
               required
             >
             <div style="font-size: 0.75rem; color: #15803d; margin-top: 0.25rem;">
-              Padrão: <code>(primeiro_nome).(arena)@prof.com</code>
+              Padrão: <code>(nome + primeira letra do sobrenome).(arena)@prof.com</code>
             </div>
           </div>
 
@@ -309,16 +320,16 @@
         <div class="modal-icon-badge whatsapp" style="background: #dcfce7; color: #15803d; border: 4px solid #bbf7d0;">
           🔑
         </div>
-        <h2 class="modal-title-custom" style="color: #15803d;">Acesso do Professor Gerado!</h2>
+        <h2 class="modal-title-custom" style="color: #15803d;">Acesso Gerado com Sucesso!</h2>
         <p style="color: var(--text-muted); font-size: 0.9rem;">
-          Encaminhe estes dados para o professor acessar o aplicativo em quadra.
+          Encaminhe estes dados para o usuário acessar o sistema.
         </p>
       </div>
 
       <div class="modal-body-custom" style="text-align: left;">
         <div style="background: #f8fafc; border: 1.5px solid var(--border-color); border-radius: var(--radius-md); padding: 1.15rem; font-size: 0.95rem; display: flex; flex-direction: column; gap: 0.5rem;">
-          <div><strong>👤 Professor:</strong> <span id="cred_prof_name"></span></div>
-          <div><strong>🏅 Modalidade:</strong> <span id="cred_prof_modality"></span></div>
+          <div><strong>👤 Usuário:</strong> <span id="cred_prof_name"></span></div>
+          <div><strong>🏅 Função / Modalidade:</strong> <span id="cred_prof_modality"></span></div>
           <div><strong>🏖️ Arena:</strong> <span id="cred_prof_arena"></span></div>
           <div style="border-top: 1px dashed var(--border-color); padding-top: 0.5rem; margin-top: 0.25rem;">
             <strong>📧 Login:</strong> <code id="cred_prof_email" style="font-weight: 800; color: #0369a1; font-size: 1rem;"></code>
@@ -358,20 +369,22 @@
         <div style="padding: 1.25rem 1.5rem;">
           <div class="form-group">
             <label class="form-label">Nome Completo do Gestor *</label>
-            <input type="text" id="new_mgr_name" class="form-control" placeholder="Ex: Marcos Gestor" required>
+            <input type="text" id="new_mgr_name" class="form-control" placeholder="Ex: Marcos Gestor" required oninput="App.updateNewManagerPreview()">
           </div>
-          <div class="form-group">
+          <div class="form-group" id="new_mgr_arena_group">
             <label class="form-label">Arena Responsável *</label>
-            <select id="new_mgr_arena" class="form-select" required>
-              <option value="1">Arena Ilha</option>
-              <option value="2">Arena Maroka</option>
-              <option value="3">Arena Ipanema Beach</option>
-              <option value="4">Arena Copacabana Sun</option>
+            <select id="new_mgr_arena" class="form-select" required onchange="App.updateNewManagerPreview()" style="font-weight: 700; color: var(--primary-ocean);">
             </select>
           </div>
           <div class="form-group">
             <label class="form-label">Telefone / WhatsApp do Gestor</label>
             <input type="tel" id="new_mgr_phone" class="form-control" placeholder="(21) 9 8888-0000">
+          </div>
+          <div id="new_mgr_email_box" class="form-group" style="background: #f0fdf4; border: 2px dashed #86efac; padding: 0.75rem 1rem; border-radius: var(--radius-md);">
+            <label class="form-label" style="color: #166534; font-size: 0.8rem; margin-bottom: 0.15rem;">
+              ⚡ Login Automático que será Gerado:
+            </label>
+            <input type="text" id="new_mgr_email_preview" class="form-control" readonly style="background: white; font-weight: 800; color: #15803d; font-size: 0.95rem;" placeholder="Preencha o nome acima...">
           </div>
         </div>
         <div class="modal-footer-custom two-buttons">
@@ -431,32 +444,8 @@
   <script src="js/reports.js"></script>
   <script src="js/app.js"></script>
 
-  <!-- Handlers de Criação dos Modais -->
+  <!-- Inicialização Supabase -->
   <script>
-    App.handleCreateStudent = function(e) {
-      e.preventDefault();
-      const name = document.getElementById('new_st_name').value;
-      const arenaId = document.getElementById('new_st_arena').value;
-      const groupName = document.getElementById('new_st_group').value;
-      const phone = document.getElementById('new_st_phone').value;
-
-      window.store.addStudent({ name, arenaId, groupName, phone });
-      App.closeModal('newStudentModal');
-      App.showToast('Aluno cadastrado com sucesso!', 'success');
-      App.renderStudents();
-    };
-
-    App.handleCreateArena = function(e) {
-      e.preventDefault();
-      const name = document.getElementById('new_ar_name').value;
-      const location = document.getElementById('new_ar_loc').value;
-
-      window.store.addArena({ name, location });
-      App.closeModal('newArenaModal');
-      App.showToast('Arena cadastrada com sucesso!', 'success');
-      App.renderArenas();
-    };
-
     document.addEventListener('DOMContentLoaded', () => {
       if (window.SupabaseSync) {
         window.SupabaseSync.init();

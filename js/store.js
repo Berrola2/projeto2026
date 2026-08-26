@@ -3,6 +3,7 @@
  * SISTEMA DE GESTÃO DE AULAS DE VÔLEI DE PRAIA
  * Gerenciador de Estado e Banco de Dados (Suporte a Supabase & Multi-tenant)
  * Suporte a RBAC: SUPER_ADMIN (@dev.com), ADMIN (@adm.com), PROFESSOR (@prof.com)
+ * Padrão de E-mail: (nome + primeira letra do Sobrenome).(arena)@(funcao).com
  * ==========================================================================
  */
 
@@ -169,27 +170,27 @@ function getDefaultData() {
       { id: 6, name: 'Ana Souza', email: 'anas.copacabana@prof.com', role: 'PROFESSOR', arenaId: 4, modality: 'Beach Tennis 🎾', initialPassword: 'ana.94120', phone: '(21) 9 7777-4004' }
     ],
     students: [
-      // Alunos Arena Ilha (ID: 1)
-      { id: 1, name: 'Gabriel Martins', phone: '(21) 9 9111-2233', email: 'gabriel@email.com', arenaId: 1, groupName: 'Iniciante Manhã' },
-      { id: 2, name: 'Beatriz Lima', phone: '(21) 9 9222-3344', email: 'beatriz@email.com', arenaId: 1, groupName: 'Iniciante Manhã' },
-      { id: 3, name: 'Lucas Oliveira', phone: '(21) 9 9333-4455', email: 'lucas@email.com', arenaId: 1, groupName: 'Iniciante Manhã' },
-      { id: 4, name: 'Mariana Costa', phone: '(21) 9 9444-5566', email: 'mariana@email.com', arenaId: 1, groupName: 'Iniciante Manhã' },
-      { id: 5, name: 'Felipe Santos', phone: '(21) 9 9555-6677', email: 'felipe@email.com', arenaId: 1, groupName: 'Intermediário Noite' },
-      { id: 6, name: 'Camila Rocha', phone: '(21) 9 9666-7788', email: 'camila@email.com', arenaId: 1, groupName: 'Intermediário Noite' },
+      // Alunos Arena Ilha (ID: 1) - Vinculados ao Prof. Felipe (ID: 2)
+      { id: 1, name: 'Gabriel Martins', phone: '(21) 9 9111-2233', email: 'gabriel@email.com', arenaId: 1, groupName: 'Iniciante Manhã', professorId: 2 },
+      { id: 2, name: 'Beatriz Lima', phone: '(21) 9 9222-3344', email: 'beatriz@email.com', arenaId: 1, groupName: 'Iniciante Manhã', professorId: 2 },
+      { id: 3, name: 'Lucas Oliveira', phone: '(21) 9 9333-4455', email: 'lucas@email.com', arenaId: 1, groupName: 'Iniciante Manhã', professorId: 2 },
+      { id: 4, name: 'Mariana Costa', phone: '(21) 9 9444-5566', email: 'mariana@email.com', arenaId: 1, groupName: 'Iniciante Manhã', professorId: 2 },
+      { id: 5, name: 'Felipe Santos', phone: '(21) 9 9555-6677', email: 'felipe@email.com', arenaId: 1, groupName: 'Intermediário Noite', professorId: 2 },
+      { id: 6, name: 'Camila Rocha', phone: '(21) 9 9666-7788', email: 'camila@email.com', arenaId: 1, groupName: 'Intermediário Noite', professorId: 2 },
 
-      // Alunos Arena Maroka (ID: 2)
-      { id: 7, name: 'Rodrigo Alves', phone: '(21) 9 9345-6789', email: 'rodrigo@email.com', arenaId: 2, groupName: 'Iniciante Manhã' },
-      { id: 8, name: 'Fernanda Gomes', phone: '(21) 9 9456-7890', email: 'fernanda@email.com', arenaId: 2, groupName: 'Iniciante Manhã' },
-      { id: 9, name: 'Marcelo Dias', phone: '(21) 9 9567-8901', email: 'marcelo@email.com', arenaId: 2, groupName: 'Intermediário Noite' },
-      { id: 10, name: 'Patricia Ramos', phone: '(21) 9 9678-9012', email: 'patricia@email.com', arenaId: 2, groupName: 'Intermediário Noite' },
+      // Alunos Arena Maroka (ID: 2) - Vinculados ao Prof. Lucas (ID: 4)
+      { id: 7, name: 'Rodrigo Alves', phone: '(21) 9 9345-6789', email: 'rodrigo@email.com', arenaId: 2, groupName: 'Iniciante Manhã', professorId: 4 },
+      { id: 8, name: 'Fernanda Gomes', phone: '(21) 9 9456-7890', email: 'fernanda@email.com', arenaId: 2, groupName: 'Iniciante Manhã', professorId: 4 },
+      { id: 9, name: 'Marcelo Dias', phone: '(21) 9 9567-8901', email: 'marcelo@email.com', arenaId: 2, groupName: 'Intermediário Noite', professorId: 4 },
+      { id: 10, name: 'Patricia Ramos', phone: '(21) 9 9678-9012', email: 'patricia@email.com', arenaId: 2, groupName: 'Intermediário Noite', professorId: 4 },
 
-      // Alunos Arena Ipanema (ID: 3)
-      { id: 11, name: 'Thiago Mendes', phone: '(21) 9 9777-8899', email: 'thiago@email.com', arenaId: 3, groupName: 'Avançado Tarde' },
-      { id: 12, name: 'Juliana Paiva', phone: '(21) 9 9888-9900', email: 'juliana@email.com', arenaId: 3, groupName: 'Avançado Tarde' },
+      // Alunos Arena Ipanema (ID: 3) - Vinculados ao Prof. Carlos (ID: 5)
+      { id: 11, name: 'Thiago Mendes', phone: '(21) 9 9777-8899', email: 'thiago@email.com', arenaId: 3, groupName: 'Avançado Tarde', professorId: 5 },
+      { id: 12, name: 'Juliana Paiva', phone: '(21) 9 9888-9900', email: 'juliana@email.com', arenaId: 3, groupName: 'Avançado Tarde', professorId: 5 },
 
-      // Alunos Arena Copacabana (ID: 4)
-      { id: 13, name: 'Vinicius Barbosa', phone: '(21) 9 9890-1234', email: 'vinicius@email.com', arenaId: 4, groupName: 'Iniciante Manhã' },
-      { id: 14, name: 'Aline Guimarães', phone: '(21) 9 9901-2345', email: 'aline@email.com', arenaId: 4, groupName: 'Iniciante Manhã' }
+      // Alunos Arena Copacabana (ID: 4) - Vinculados à Prof. Ana (ID: 6)
+      { id: 13, name: 'Vinicius Barbosa', phone: '(21) 9 9890-1234', email: 'vinicius@email.com', arenaId: 4, groupName: 'Iniciante Manhã', professorId: 6 },
+      { id: 14, name: 'Aline Guimarães', phone: '(21) 9 9901-2345', email: 'aline@email.com', arenaId: 4, groupName: 'Iniciante Manhã', professorId: 6 }
     ],
     classes: [
       // Aula 1: Prof. Felipe na Arena Ilha (ID: 1)
@@ -250,7 +251,7 @@ function getDefaultData() {
 
 class Store {
   constructor() {
-    this.STORAGE_KEY = 'VOLEI_PRAIA_DB_v5';
+    this.STORAGE_KEY = 'VOLEI_PRAIA_DB_v6';
     this.listeners = [];
     this.state = this.load();
   }
@@ -343,47 +344,6 @@ class Store {
     this.state.currentUser = user;
     this.save();
     return { success: true, user };
-  }
-
-  register(name, email, phone, arenaId, role, password, passwordConfirm) {
-    const cleanEmail = (email || '').trim().toLowerCase();
-    if (!name || !cleanEmail || !password) {
-      return { success: false, error: 'Por favor, preencha todos os campos obrigatórios.' };
-    }
-
-    if (password !== passwordConfirm) {
-      return { success: false, error: 'As senhas informadas não coincidem.' };
-    }
-
-    if (password.length < 6) {
-      return { success: false, error: 'A senha deve conter no mínimo 6 caracteres.' };
-    }
-
-    const validation = this.validateEmailDomain(cleanEmail);
-    if (!validation.valid) {
-      return { success: false, error: validation.error };
-    }
-
-    const existing = this.state.users.find(u => u.email.toLowerCase() === cleanEmail);
-    if (existing) {
-      return { success: false, error: 'Este e-mail já está cadastrado no sistema.' };
-    }
-
-    const newId = this.state.users.length > 0 ? Math.max(...this.state.users.map(u => u.id)) + 1 : 1;
-    const newUser = {
-      id: newId,
-      name,
-      email: cleanEmail,
-      phone: phone || '',
-      arenaId: validation.role === 'SUPER_ADMIN' ? null : Number(arenaId),
-      role: validation.role,
-      createdAt: new Date().toISOString()
-    };
-
-    this.state.users.push(newUser);
-    this.state.currentUser = newUser;
-    this.save();
-    return { success: true, user: newUser };
   }
 
   logout() {
@@ -558,17 +518,29 @@ class Store {
   }
 
   // ----------------------------------------------------
-  // GESTÃO DE ALUNOS, ARENAS E PROFESSORES
+  // GESTÃO DE ALUNOS (ISOLADA POR ARENA & PROFESSOR)
   // ----------------------------------------------------
-  getStudents(arenaId = null, query = '') {
+  getStudents(arenaId = null, query = '', professorId = null) {
     const user = this.getCurrentUser();
     let list = [...this.state.students];
 
-    // Se o gestor logado tem arenaId fixo, isola apenas para sua arena
-    if (user && user.role === 'ADMIN' && user.arenaId) {
+    if (user && user.role === 'PROFESSOR') {
+      // O professor visualiza apenas os alunos da sua arena vinculados ao seu ID
+      list = list.filter(s => s.arenaId === user.arenaId && (s.professorId === user.id || !s.professorId));
+    } else if (user && user.role === 'ADMIN' && user.arenaId) {
+      // O gestor visualiza os alunos da sua arena
       list = list.filter(s => s.arenaId === user.arenaId);
-    } else if (arenaId) {
-      list = list.filter(s => s.arenaId === Number(arenaId));
+      if (professorId) {
+        list = list.filter(s => s.professorId === Number(professorId));
+      }
+    } else {
+      // DEV / Super Admin
+      if (arenaId) {
+        list = list.filter(s => s.arenaId === Number(arenaId));
+      }
+      if (professorId) {
+        list = list.filter(s => s.professorId === Number(professorId));
+      }
     }
 
     if (query) {
@@ -589,7 +561,8 @@ class Store {
       phone: data.phone || '',
       email: data.email || '',
       arenaId: targetArenaId,
-      groupName: data.groupName || 'Iniciante Manhã'
+      groupName: data.groupName || 'Iniciante Manhã',
+      professorId: Number(data.professorId || 0)
     };
     this.state.students.push(newStudent);
     this.save();
