@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="Sistema completo de gestão de aulas, presenças e fotos de vôlei de praia nas arenas.">
+  <title>Vôlei de Praia Brasil - Gestão de Aulas & Quadras</title>
+  
+  <!-- CSS Design System -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+  
+  <!-- Favicon / Ícone da Bola de Vôlei -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏐</text></svg>">
+</head>
+<body>
+
+  <!-- 1. CABEÇALHO SUPERIOR (DESKTOP & MOBILE) -->
+  <header class="app-header">
+    <div class="header-container">
+      <a href="#/login" class="brand-logo" onclick="if(window.store.getCurrentUser()){ window.App.navigate(window.store.getCurrentUser().role === 'ADMIN' ? '#/admin' : '#/professor'); return false; }">
+        <div class="brand-icon">🏐</div>
+        <div>
+          <span>VÔLEI PRAIA</span>
+          <span class="brand-text-sub">Gestão de Aulas & Quadras</span>
+        </div>
+      </a>
+
+      <!-- Menu Desktop -->
+      <nav class="nav-desktop" id="headerNavDesktop"></nav>
+    </div>
+  </header>
+
+  <!-- 2. CONTEÚDO PRINCIPAL (SPA CONTAINER) -->
+  <main class="main-content">
+    
+    <!-- TELAS DA APLICAÇÃO -->
+    <section id="loginView" class="view-section"></section>
+    <section id="registerView" class="view-section"></section>
+    
+    <!-- ÁREA DO PROFESSOR -->
+    <section id="professorDashboardView" class="view-section"></section>
+    <section id="quickClassView" class="view-section"></section>
+    <section id="classDetailView" class="view-section"></section>
+    <section id="monthlyCloseView" class="view-section"></section>
+    
+    <!-- ÁREA DO ADMINISTRADOR -->
+    <section id="adminDashboardView" class="view-section"></section>
+    <section id="galleryView" class="view-section"></section>
+    <section id="reportsView" class="view-section"></section>
+    <section id="studentsView" class="view-section"></section>
+    <section id="arenasView" class="view-section"></section>
+    <section id="professoresView" class="view-section"></section>
+    <section id="calendarView" class="view-section"></section>
+
+  </main>
+
+  <!-- 3. BARRA DE NAVEGAÇÃO INFERIOR MOBILE -->
+  <nav class="bottom-nav-mobile" id="bottomNavMobile"></nav>
+
+  <!-- ==========================================================================
+       MODAIS DO SISTEMA
+       ========================================================================== -->
+
+  <!-- MODAL: FOTO PENDENTE -->
+  <div class="modal-backdrop" id="photoPendingModal">
+    <div class="modal-card">
+      <div class="modal-header-custom">
+        <div class="modal-icon-badge warning">📸</div>
+        <h2 class="modal-title-custom" style="color: #854d0e;">Foto da Aula Pendente</h2>
+      </div>
+      <div class="modal-body-custom">
+        <p>A aula e as presenças foram salvas com sucesso!</p>
+        <p style="margin-top: 0.5rem; font-weight: 700; color: var(--primary-deep);">
+          Lembre-se de tirar e anexar a foto da turma reunida na areia para concluir o registro e liberar o envio via WhatsApp.
+        </p>
+      </div>
+      <div class="modal-footer-custom">
+        <button class="btn btn-sand btn-block" data-close-modal>
+          Entendido, anexar depois
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: DISPARO WHATSAPP -->
+  <div class="modal-backdrop" id="whatsappModal">
+    <div class="modal-card">
+      <div class="modal-header-custom">
+        <div class="modal-icon-badge whatsapp">📲</div>
+        <h2 class="modal-title-custom" style="color: #15803d;">Foto Pronta para Envio!</h2>
+      </div>
+      <div class="modal-body-custom">
+        <p>A foto da aula foi processada e está pronta para ser enviada para a coordenação e alunos no WhatsApp.</p>
+        <div class="modal-preview-box" id="whatsappMessagePreview">
+          “Boa noite! Segue a foto da aula de hoje na arena... 🏐📸”
+        </div>
+      </div>
+      <div class="modal-footer-custom two-buttons">
+        <button class="btn btn-secondary" style="flex: 1;" data-close-modal>
+          Fechar
+        </button>
+        <button class="btn btn-whatsapp" style="flex: 1.4;" id="btnConfirmWhatsApp">
+          <span>📲</span> ABRIR WHATSAPP
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: LIGHTBOX DE FOTOS EM ALTA DEFINIÇÃO -->
+  <div class="modal-backdrop" id="photoLightboxModal">
+    <div class="modal-card" style="max-width: 720px;">
+      <div style="position: relative; background: #0f172a; text-align: center;">
+        <button data-close-modal style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 1.25rem; z-index: 10;">&times;</button>
+        <img src="" id="lightboxImage" alt="Foto Ampliada" style="max-width: 100%; max-height: 70vh; object-fit: contain;">
+      </div>
+      <div style="padding: 1.25rem 1.5rem;">
+        <h3 id="lightboxTitle" style="font-size: 1.3rem; color: var(--primary-deep); margin-bottom: 0.25rem;">Arena</h3>
+        <p id="lightboxDetails" style="color: var(--text-muted); font-size: 0.9rem;">Detalhes da aula</p>
+      </div>
+      <div class="modal-footer-custom">
+        <button class="btn btn-secondary btn-block" data-close-modal>Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NOVO ALUNO -->
+  <div class="modal-backdrop" id="newStudentModal">
+    <div class="modal-card">
+      <div class="modal-header-custom" style="padding-bottom: 0;">
+        <h2 class="modal-title-custom" style="color: var(--primary-deep);">➕ Cadastrar Novo Aluno</h2>
+      </div>
+      <form onsubmit="App.handleCreateStudent(event)">
+        <div style="padding: 1.25rem 1.5rem;">
+          <div class="form-group">
+            <label class="form-label">Nome Completo *</label>
+            <input type="text" id="new_st_name" class="form-control" placeholder="Ex: Rodrigo Alves" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Arena *</label>
+            <select id="new_st_arena" class="form-select" required>
+              <option value="1">Arena Ipanema Beach</option>
+              <option value="2">Arena Copacabana Sun</option>
+              <option value="3">Arena Barra Sunset</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Turma / Categoria *</label>
+            <input type="text" id="new_st_group" class="form-control" placeholder="Ex: Iniciante Manhã, Intermediário..." value="Iniciante Manhã" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Telefone / WhatsApp</label>
+            <input type="tel" id="new_st_phone" class="form-control" placeholder="(21) 99999-9999">
+          </div>
+        </div>
+        <div class="modal-footer-custom two-buttons">
+          <button type="button" class="btn btn-secondary" style="flex: 1;" data-close-modal>Cancelar</button>
+          <button type="submit" class="btn btn-sand" style="flex: 1;">Salvar Aluno</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: NOVA ARENA -->
+  <div class="modal-backdrop" id="newArenaModal">
+    <div class="modal-card">
+      <div class="modal-header-custom" style="padding-bottom: 0;">
+        <h2 class="modal-title-custom" style="color: var(--primary-deep);">🏖️ Cadastrar Nova Arena</h2>
+      </div>
+      <form onsubmit="App.handleCreateArena(event)">
+        <div style="padding: 1.25rem 1.5rem;">
+          <div class="form-group">
+            <label class="form-label">Nome da Arena *</label>
+            <input type="text" id="new_ar_name" class="form-control" placeholder="Ex: Arena Leblon Beach" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Localização / Endereço *</label>
+            <input type="text" id="new_ar_loc" class="form-control" placeholder="Ex: Av. Delfim Moreira, Posto 11 - Rio de Janeiro" required>
+          </div>
+        </div>
+        <div class="modal-footer-custom two-buttons">
+          <button type="button" class="btn btn-secondary" style="flex: 1;" data-close-modal>Cancelar</button>
+          <button type="submit" class="btn btn-sand" style="flex: 1;">Salvar Arena</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: NOVO PROFESSOR -->
+  <div class="modal-backdrop" id="newProfModal">
+    <div class="modal-card">
+      <div class="modal-header-custom" style="padding-bottom: 0;">
+        <h2 class="modal-title-custom" style="color: var(--primary-deep);">👨‍🏫 Cadastrar Novo Professor</h2>
+      </div>
+      <form onsubmit="App.handleCreateProf(event)">
+        <div style="padding: 1.25rem 1.5rem;">
+          <div class="form-group">
+            <label class="form-label">Nome do Professor *</label>
+            <input type="text" id="new_prof_name" class="form-control" placeholder="Ex: Professor Lucas" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">E-mail Institucional (@prof.com) *</label>
+            <input type="email" id="new_prof_email" class="form-control" placeholder="lucas@prof.com" required>
+            <div class="form-text">Obrigatoriamente com final <strong>@prof.com</strong>.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Telefone / WhatsApp</label>
+            <input type="tel" id="new_prof_phone" class="form-control" placeholder="(21) 98888-7777">
+          </div>
+        </div>
+        <div class="modal-footer-custom two-buttons">
+          <button type="button" class="btn btn-secondary" style="flex: 1;" data-close-modal>Cancelar</button>
+          <button type="submit" class="btn btn-sand" style="flex: 1;">Salvar Professor</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SCRIPTS MODULARES -->
+  <script src="js/store.js"></script>
+  <script src="js/quick-class.js"></script>
+  <script src="js/whatsapp.js"></script>
+  <script src="js/gallery.js"></script>
+  <script src="js/reports.js"></script>
+  <script src="js/app.js"></script>
+
+  <!-- Handlers de Criação dos Modais -->
+  <script>
+    App.handleCreateStudent = function(e) {
+      e.preventDefault();
+      const name = document.getElementById('new_st_name').value;
+      const arenaId = document.getElementById('new_st_arena').value;
+      const groupName = document.getElementById('new_st_group').value;
+      const phone = document.getElementById('new_st_phone').value;
+
+      window.store.addStudent({ name, arenaId, groupName, phone });
+      App.closeModal('newStudentModal');
+      App.showToast('Aluno cadastrado com sucesso!', 'success');
+      App.renderStudents();
+    };
+
+    App.handleCreateArena = function(e) {
+      e.preventDefault();
+      const name = document.getElementById('new_ar_name').value;
+      const location = document.getElementById('new_ar_loc').value;
+
+      window.store.addArena({ name, location });
+      App.closeModal('newArenaModal');
+      App.showToast('Arena cadastrada com sucesso!', 'success');
+      App.renderArenas();
+    };
+
+    App.handleCreateProf = function(e) {
+      e.preventDefault();
+      const name = document.getElementById('new_prof_name').value;
+      const email = document.getElementById('new_prof_email').value;
+      const phone = document.getElementById('new_prof_phone').value;
+
+      const res = window.store.addProfessor({ name, email, phone });
+      if (res.success) {
+        App.closeModal('newProfModal');
+        App.showToast('Professor cadastrado com sucesso!', 'success');
+        App.renderProfessores();
+      } else {
+        App.showToast(res.error, 'danger');
+      }
+    };
+  </script>
+
+</body>
+</html>

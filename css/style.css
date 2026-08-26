@@ -1,10 +1,10 @@
 /* ==========================================================================
    SISTEMA DE GESTÃO DE AULAS DE VÔLEI DE PRAIA - DESIGN SYSTEM
-   Tema: Vôlei de Praia (Azul Oceano, Areia Dourada, Branco Puro e Tons Solares)
+   Tema: Vôlei de Praia (Azul Oceano, Areia Dourada, Branco e Tons Solares)
    Mobile-First, Acessível, Botões Grandes para Uso em Quadra
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&display=swap');
 
 :root {
   /* Cores Principais do Tema Vôlei de Praia */
@@ -36,7 +36,7 @@
   --border-focus: #0284c7;
 
   /* Textos */
-  --text-main: #0f172a;            /* Quase preto para alto contraste ao sol */
+  --text-main: #0f172a;            /* Alto contraste para leitura sob luz solar intensa */
   --text-muted: #64748b;
   --text-subtle: #94a3b8;
   --text-inverse: #ffffff;
@@ -50,9 +50,9 @@
 
   /* Raios de Arredondamento */
   --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
   --radius-full: 9999px;
 
   /* Tipografia */
@@ -85,7 +85,7 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding-bottom: 80px; /* Espaço para barra inferior mobile */
+  padding-bottom: 85px; /* Espaço para barra inferior mobile */
 }
 
 @media (min-width: 768px) {
@@ -113,7 +113,7 @@ a:hover {
 }
 
 /* ==========================================================================
-   LAYOUT E CABEÇALHO
+   CABEÇALHO SUPERIOR (DESKTOP & MOBILE)
    ========================================================================== */
 
 .app-header {
@@ -128,7 +128,7 @@ a:hover {
 .header-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0.75rem 1.25rem;
+  padding: 0.85rem 1.25rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -141,26 +141,27 @@ a:hover {
   color: white;
   font-family: var(--font-heading);
   font-weight: 800;
-  font-size: 1.25rem;
+  font-size: 1.3rem;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .brand-icon {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   background: linear-gradient(135deg, var(--sand-gold), var(--sunset-orange));
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
-  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.35);
+  font-size: 1.5rem;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
 }
 
 .brand-text-sub {
   font-size: 0.75rem;
   font-weight: 500;
-  opacity: 0.85;
+  opacity: 0.9;
   display: block;
 }
 
@@ -168,7 +169,7 @@ a:hover {
 .nav-desktop {
   display: none;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
 @media (min-width: 768px) {
@@ -186,27 +187,30 @@ a:hover {
   transition: all var(--transition-fast);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
+  cursor: pointer;
+  border: none;
+  background: none;
 }
 
 .nav-link:hover, .nav-link.active {
   color: white;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .user-badge-header {
   background: rgba(255, 255, 255, 0.12);
-  padding: 0.4rem 0.85rem;
+  padding: 0.45rem 0.95rem;
   border-radius: var(--radius-full);
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.65rem;
   font-size: 0.85rem;
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .role-pill {
-  padding: 0.2rem 0.6rem;
+  padding: 0.2rem 0.65rem;
   border-radius: var(--radius-full);
   font-size: 0.7rem;
   font-weight: 800;
@@ -225,7 +229,7 @@ a:hover {
 }
 
 /* ==========================================================================
-   BARRA DE NAVEGAÇÃO INFERIOR (MOBILE FIRST)
+   BARRA DE NAVEGAÇÃO INFERIOR MOBILE (TOUCH-FIRST)
    ========================================================================== */
 
 .bottom-nav-mobile {
@@ -239,12 +243,12 @@ a:hover {
   justify-content: space-around;
   padding: 0.5rem 0.25rem max(0.5rem, env(safe-area-inset-bottom));
   z-index: 99;
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.08);
 }
 
 @media (min-width: 768px) {
   .bottom-nav-mobile {
-    display: none;
+    display: none !important;
   }
 }
 
@@ -255,16 +259,20 @@ a:hover {
   justify-content: center;
   color: var(--text-muted);
   font-size: 0.72rem;
-  font-weight: 600;
+  font-weight: 700;
   padding: 0.35rem 0.5rem;
   border-radius: var(--radius-md);
   flex: 1;
   text-align: center;
   transition: all var(--transition-fast);
+  cursor: pointer;
+  border: none;
+  background: none;
+  text-decoration: none;
 }
 
 .bottom-nav-item .icon {
-  font-size: 1.35rem;
+  font-size: 1.4rem;
   margin-bottom: 2px;
 }
 
@@ -274,20 +282,20 @@ a:hover {
 
 .bottom-nav-item.highlight {
   position: relative;
-  top: -12px;
+  top: -14px;
 }
 
 .bottom-nav-item.highlight .icon-wrapper {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   background: linear-gradient(135deg, var(--sand-gold), var(--sunset-orange));
   color: white;
   border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+  font-size: 1.6rem;
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.45);
   border: 3px solid white;
 }
 
@@ -309,6 +317,20 @@ a:hover {
   }
 }
 
+.view-section {
+  display: none;
+  animation: fadeIn 0.25s ease;
+}
+
+.view-section.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* Alertas e Toasts */
 .alert-container {
   margin-bottom: 1.25rem;
@@ -322,14 +344,9 @@ a:hover {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.95rem;
-  animation: slideDown 0.3s ease;
-}
-
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  box-shadow: var(--shadow-sm);
 }
 
 .alert-success {
@@ -370,7 +387,7 @@ a:hover {
 }
 
 /* ==========================================================================
-   COMPONENTES GERAIS: BOTÕES TÁTEIS (MÍNIMO 48PX PARA QUADRA)
+   BOTÕES TÁTEIS (MÍNIMO 48PX PARA QUADRA)
    ========================================================================== */
 
 .btn {
@@ -378,8 +395,8 @@ a:hover {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  min-height: 48px; /* Otimizado para toque em celular */
-  padding: 0.75rem 1.35rem;
+  min-height: 48px; /* Otimizado para toque em celular na areia */
+  padding: 0.75rem 1.4rem;
   font-family: var(--font-main);
   font-size: 1rem;
   font-weight: 700;
@@ -416,7 +433,7 @@ a:hover {
 .btn-sand:hover {
   background: linear-gradient(135deg, #f59e0b, #ea580c);
   color: white;
-  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+  box-shadow: 0 6px 18px rgba(245, 158, 11, 0.4);
 }
 
 .btn-whatsapp {
@@ -429,7 +446,7 @@ a:hover {
 .btn-whatsapp:hover {
   background: #20ba5a;
   color: white;
-  box-shadow: 0 6px 18px rgba(37, 211, 102, 0.45);
+  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.45);
 }
 
 .btn-secondary {
@@ -490,8 +507,8 @@ a:hover {
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
-  padding: 1.25rem;
-  margin-bottom: 1.25rem;
+  padding: 1.35rem;
+  margin-bottom: 1.35rem;
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
@@ -504,12 +521,14 @@ a:hover {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 1rem;
-  padding-bottom: 0.75rem;
+  padding-bottom: 0.85rem;
   border-bottom: 1px solid var(--border-color);
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .card-title {
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   color: var(--primary-deep);
   display: flex;
   align-items: center;
@@ -575,9 +594,9 @@ a:hover {
 .kpi-label {
   font-size: 0.8rem;
   color: var(--text-muted);
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
 }
 
 .kpi-icon {
@@ -597,7 +616,7 @@ a:hover {
   padding: 0.35rem 0.75rem;
   border-radius: var(--radius-full);
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -685,7 +704,7 @@ a:hover {
   background-color: var(--bg-surface-subtle);
   padding: 0.9rem 1rem;
   font-size: 0.8rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;

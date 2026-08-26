@@ -3,7 +3,7 @@
    ========================================================================== */
 
 /* ==========================================================================
-   1. CARDS DE PRESENÇA RÁPIDA (TOUCH-FRIENDLY PARA QUADRA)
+   1. CARDS DE PRESENÇA RÁPIDA (TOUCH-FRIENDLY PARA QUADRA DE AREIA)
    ========================================================================== */
 
 .attendance-header {
@@ -12,14 +12,16 @@
   justify-content: space-between;
   margin-bottom: 1rem;
   background: var(--bg-surface-subtle);
-  padding: 0.75rem 1rem;
+  padding: 0.85rem 1.15rem;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .attendance-counter {
-  font-weight: 700;
-  font-size: 0.95rem;
+  font-weight: 800;
+  font-size: 1rem;
   color: var(--primary-deep);
 }
 
@@ -46,14 +48,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.9rem 1.1rem;
+  padding: 0.95rem 1.2rem;
   background: white;
-  border: 2px solid var(--border-color);
+  border: 2.5px solid var(--border-color);
   border-radius: var(--radius-lg);
   cursor: pointer;
   transition: all var(--transition-fast);
   user-select: none;
-  min-height: 64px;
+  min-height: 68px;
 }
 
 .student-card:active {
@@ -63,7 +65,7 @@
 .student-card.present {
   background: #f0fdf4;
   border-color: var(--success-emerald);
-  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.12);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
 }
 
 .student-card.absent {
@@ -75,12 +77,12 @@
 .student-info {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.85rem;
 }
 
 .student-avatar {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--radius-full);
   background: var(--primary-light);
   color: var(--primary-ocean);
@@ -88,7 +90,7 @@
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 1rem;
+  font-size: 1.1rem;
 }
 
 .student-card.present .student-avatar {
@@ -97,25 +99,26 @@
 }
 
 .student-name {
-  font-weight: 700;
-  font-size: 0.95rem;
+  font-weight: 800;
+  font-size: 1rem;
   color: var(--primary-deep);
 }
 
 .student-group-tag {
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   color: var(--text-muted);
+  font-weight: 600;
 }
 
 .presence-status-pill {
-  padding: 0.4rem 0.8rem;
+  padding: 0.4rem 0.85rem;
   border-radius: var(--radius-full);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 800;
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  min-width: 90px;
+  min-width: 95px;
   justify-content: center;
 }
 
@@ -134,9 +137,9 @@
    ========================================================================== */
 
 .photo-upload-zone {
-  border: 2px dashed #94a3b8;
+  border: 2.5px dashed #94a3b8;
   border-radius: var(--radius-xl);
-  padding: 1.5rem 1rem;
+  padding: 1.75rem 1rem;
   text-align: center;
   background: #f8fafc;
   cursor: pointer;
@@ -151,15 +154,15 @@
 }
 
 .upload-icon-circle {
-  width: 64px;
-  height: 64px;
+  width: 68px;
+  height: 68px;
   margin: 0 auto 0.75rem auto;
   border-radius: var(--radius-full);
   background: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.85rem;
+  font-size: 2rem;
   color: var(--primary-ocean);
   box-shadow: var(--shadow-sm);
 }
@@ -168,6 +171,7 @@
   display: none;
   margin-top: 1rem;
   position: relative;
+  text-align: center;
 }
 
 .photo-preview-container.active {
@@ -176,7 +180,7 @@
 
 .photo-preview-img {
   max-width: 100%;
-  max-height: 280px;
+  max-height: 320px;
   border-radius: var(--radius-md);
   object-fit: cover;
   box-shadow: var(--shadow-md);
@@ -190,12 +194,13 @@
   color: white;
   border: none;
   border-radius: var(--radius-full);
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  font-size: 1.25rem;
 }
 
 /* ==========================================================================
@@ -227,7 +232,7 @@
 .modal-card {
   background: white;
   border-radius: var(--radius-xl);
-  max-width: 480px;
+  max-width: 490px;
   width: 100%;
   box-shadow: var(--shadow-xl);
   overflow: hidden;
@@ -240,19 +245,19 @@
 }
 
 .modal-header-custom {
-  padding: 1.5rem 1.5rem 1rem 1.5rem;
+  padding: 1.75rem 1.5rem 1rem 1.5rem;
   text-align: center;
 }
 
 .modal-icon-badge {
-  width: 72px;
-  height: 72px;
+  width: 76px;
+  height: 76px;
   margin: 0 auto 1rem auto;
   border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.25rem;
+  font-size: 2.5rem;
 }
 
 .modal-icon-badge.warning {
@@ -268,8 +273,8 @@
 }
 
 .modal-title-custom {
-  font-size: 1.35rem;
-  font-weight: 800;
+  font-size: 1.4rem;
+  font-weight: 900;
   margin-bottom: 0.5rem;
 }
 
@@ -293,7 +298,7 @@
 }
 
 .modal-footer-custom {
-  padding: 1rem 1.5rem 1.5rem 1.5rem;
+  padding: 1.25rem 1.5rem 1.5rem 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -361,7 +366,7 @@
 }
 
 .gallery-card:hover .gallery-img {
-  transform: scale(1.04);
+  transform: scale(1.05);
 }
 
 .gallery-status-overlay {
@@ -375,16 +380,16 @@
   position: absolute;
   bottom: 10px;
   right: 10px;
-  background: rgba(15, 23, 42, 0.8);
+  background: rgba(15, 23, 42, 0.85);
   color: white;
   font-size: 0.75rem;
   font-weight: 700;
-  padding: 0.25rem 0.6rem;
+  padding: 0.25rem 0.65rem;
   border-radius: var(--radius-full);
 }
 
 .gallery-body {
-  padding: 1rem;
+  padding: 1rem 1.15rem;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -392,8 +397,8 @@
 }
 
 .gallery-arena-title {
-  font-size: 1.05rem;
-  font-weight: 700;
+  font-size: 1.1rem;
+  font-weight: 800;
   color: var(--primary-deep);
   margin-bottom: 0.25rem;
 }

@@ -1,128 +1,84 @@
 # 🏐 Sistema de Gestão de Aulas de Vôlei de Praia
 
-Aplicação web completa, moderna e responsiva (mobile-first) desenvolvida em **Python (Flask, SQLAlchemy, Jinja2)** e **Vanilla CSS/JS**, 100% em **Português do Brasil (PT-BR)**, para gestão de aulas, presenças, controle fotográfico e relatórios em quadras e arenas de Vôlei de Praia.
+Aplicação web moderna, ultra-responsiva e otimizada para uso em celulares diretamente nas quadras de areia.
 
 ---
 
-## 📸 Funcionalidades Principais
+## 🌟 Principais Funcionalidades
 
-### 1. 👨‍🏫 Fluxo do Professor (`Meu Painel`)
-- **Registro Rápido de Aula (< 1 min no celular):** Seleção ágil de Arena, Turma, Data, Horário e lista de chamada com seleção rápida de 1 toque (🟢 Presente / ⚪ Ausente) e atalhos "Todos Presentes" / "Todos Ausentes".
-- **Lembrete e Status de Fotos:**
-  - `🟡 FOTO PENDENTE`: Ao salvar a aula sem foto, exibe o modal de alerta *"📸 FOTO DA AULA PENDENTE"*.
-  - `🟢 FOTO RECEBIDA`: Ao anexar a foto da aula (com suporte direto à câmera do celular).
-- **Integração WhatsApp:** Modal *"📲 FOTO PRONTA PARA ENVIO"* com botão para abrir diretamente o WhatsApp (`https://wa.me/?text=...`) com mensagem pré-formatada:
-  `"Boa noite! Segue a foto da aula de hoje na Arena Ipanema Beach (26/08/2026). 🏐📸"`
-  e atualização automática do status para `🔵 PREPARADO PARA ENVIO`.
-- **Fechamento do Mês:** Filtro mensal com indicadores de aulas dadas, alunos atendidos, taxa global de presença e total de fotos registradas.
+### 1. ⚡ Registro Rápido de Aula (&lt; 1 Minuto no Celular)
+- Seleção imediata de Arena, Turma, Data e Horário.
+- **Chamada com 1-Toque**: Toque no card do aluno para alternar entre `🟢 Presente` e `⚪ Ausente`.
+- Botões de atalho **"Todos Presentes"** e **"Todos Ausentes"**.
+- Contadores em tempo real de presença e taxa de frequência.
+- Captura de foto diretamente da câmera do celular (`accept="image/*"`).
 
-### 2. 🛡️ Fluxo do Administrador (`Painel Geral`)
-- **Dashboard Consolidado:** Métricas diárias (aulas hoje, professores ativos, presença geral e fotos hoje) e métricas mensais.
-- **Galeria Central de Fotos:** Feed visual centralizado com filtros por Data, Arena, Professor, Turma e Status, além de visualizador Lightbox e botão de compartilhamento WhatsApp.
-- **Relatórios & Exportação CSV:** Relatórios consolidados por Professor e por Arena, com exportação em formato CSV com separador `;` e codificação UTF-8 BOM para compatibilidade com o Excel.
-- **Cadastros Administrativos:** Gestão de Alunos, Arenas, Professores e Calendário Geral de aulas.
+### 2. 📸 Status Visual de Fotos & Lembretes
+- `🟡 FOTO PENDENTE`: Modal de aviso para lembrar o professor de registrar a foto da turma na areia.
+- `🟢 FOTO RECEBIDA`: Foto enviada e pronta para compartilhamento.
+- `🔵 PREPARADO PARA ENVIO`: Status atualizado após o disparo.
 
-### 3. 🔐 Controle de Acesso e Permissões (RBAC)
-Validação rigorosa por domínio institucional:
-- **`@prof.com`:** Papel `PROFESSOR` definido automaticamente. Acesso isolado exclusivamente às suas próprias turmas, aulas e relatórios.
-- **`@arenaadm.com`:** Papel `ADMIN` definido automaticamente. Acesso global a todas as arenas e painel executivo.
-- **Outros domínios:** Rejeição imediata no cadastro e login com a mensagem: `"Este e-mail não possui permissão para acessar o sistema."`
-- **Proteção de Rotas:** Tentativas não autorizadas recebem: `"Você não possui permissão para acessar esta área."`
+### 3. 📲 Integração Direta com WhatsApp
+- Geração automática de link `https://wa.me/?text=...` com mensagem personalizada:
+  > *"Boa noite! Segue a foto da aula de hoje na {Nome_Arena} ({Data}). 🏐📸"*
+- Atualização em tempo real para o status `🔵 PREPARADO`.
 
----
+### 4. 🛡️ Controle de Acesso por Domínio de E-mail (RBAC)
+- **Professor (`@prof.com`):** Acesso a Meu Painel, Registro Rápido, Chamada e Fechamento do Mês.
+- **Administrador (`@arenaadm.com`):** Acesso ao Painel Geral, Galeria Central de Fotos, Relatórios, Gestão de Alunos, Arenas, Professores e Calendário.
+- Qualquer outro domínio recebe a mensagem: *"Este e-mail não possui permissão para acessar o sistema."*
 
-## 🚀 Como Executar o Projeto Localmente
+### 5. 📸 Galeria Central & Lightbox
+- Feed visual de fotos com filtros dinâmicos por Data, Arena, Professor e Turma.
+- Visualizador ampliado (Lightbox) e botão de download.
 
-### Pré-requisitos
-- Python 3.11 ou superior
-- Pip e Git instalados
-
-### Passo a Passo
-
-1. **Clone o repositório:**
-   ```bash
-   git clone https://github.com/Berrola2/projeto2026.git
-   cd projeto2026
-   ```
-
-2. **Crie e ative um ambiente virtual (recomendado):**
-   ```bash
-   python -m venv venv
-   # No Windows:
-   .\venv\Scripts\activate
-   # No Linux/Mac:
-   source venv/bin/activate
-   ```
-
-3. **Instale as dependências:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Execute a aplicação:**
-   ```bash
-   python app.py
-   ```
-
-5. **Acesse no navegador:**
-   [http://127.0.0.1:5000](http://127.0.0.1:5000)
-
-> O banco de dados SQLite será criado e populado automaticamente na primeira execução com dados realistas de exemplo.
+### 6. 📊 Relatórios Consolidados & Exportação CSV
+- Relatórios por Professor e por Arena.
+- Botão **Exportar CSV** formatado com delimitador `;` e codificação UTF-8 BOM para abertura perfeita no Excel em português.
 
 ---
 
-## 🔑 Usuários e Credenciais de Demonstração
+## 🔑 Credenciais Pré-configuradas para Demonstração
 
-| Papel | E-mail Autorizado | Senha | Nome | Acesso |
-| :--- | :--- | :--- | :--- | :--- |
-| **Professor** | `carlos@prof.com` | `senha123` | Carlos Silva | Painel do Professor, Chamada, Fechamento |
-| **Professora** | `ana@prof.com` | `senha123` | Ana Souza | Painel da Professora, Chamada, WhatsApp |
-| **Administrador** | `gestor@arenaadm.com` | `senha123` | Roberto Gestor | Painel Geral, Galeria, Relatórios, Arenas |
+| Papel | E-mail | Senha | Nome |
+| :--- | :--- | :--- | :--- |
+| **Professor** | `carlos@prof.com` | `senha123` | Carlos Silva |
+| **Professora** | `ana@prof.com` | `senha123` | Ana Souza |
+| **Administrador** | `gestor@arenaadm.com` | `senha123` | Roberto Gestor |
+| **Administrador** | `admin@arenaadm.com` | `senha123` | Administrador da Arena |
 
 ---
 
-## 🧪 Executando os Testes Automatizados
+## 🚀 Como Executar
 
-O projeto conta com suíte de testes unitários e de integração utilizando `pytest`:
+### 1. Online (Vercel / GitHub Pages)
+O projeto é 100% estático e compatível com qualquer plataforma de hospedagem com deploy instantâneo e zero falhas de runtime.
 
+### 2. Localmente
+Basta abrir o arquivo `index.html` em qualquer navegador ou rodar um servidor web local:
 ```bash
-python -m pytest -v
+npx serve .
+# ou
+python -m http.server 3000
 ```
-
-Cobertura de testes:
-- Validação estrita de domínios (`@prof.com`, `@arenaadm.com` e rejeições).
-- Controle de acesso e proteção de rotas administrativas.
-- Criação rápida de aulas, cálculos de presença e transição de status de fotos.
-- Isolamento de dados entre professores.
-- Integração WhatsApp e exportação de CSV.
+Acesse `http://localhost:3000`.
 
 ---
 
-## 📂 Estrutura de Pastas
+## 📁 Estrutura do Código
 
 ```
-├── app.py                      # Fábrica Flask, rotas, filtros PT-BR e erros
-├── config.py                   # Configurações do banco SQLite e uploads
-├── models.py                   # Modelos ORM (User, Arena, Student, ClassSession, Attendance, ClassPhoto)
-├── auth.py                     # Lógica RBAC, decorators e validação de domínios
-├── seed_data.py                # Dados iniciais realistas para teste imediato
-├── requirements.txt            # Dependências Python
-├── static/
-│   ├── css/
-│   │   ├── style.css           # Design system do tema Vôlei de Praia
-│   │   └── components.css      # Cards de presença, botões 48px+, modais e galeria
-│   ├── js/
-│   │   ├── app.js              # Modais, alertas e lightbox
-│   │   ├── quick_class.js      # Registro rápido e seleção 1-toque
-│   │   └── whatsapp.js         # Integração WhatsApp (wa.me)
-│   └── uploads/photos/         # Fotos das aulas
-├── templates/                  # Templates Jinja2 em PT-BR (base, auth, professor, admin, errors)
-└── tests/                      # Suíte de testes automatizados com pytest
+├── index.html            # Aplicação SPA completa com todas as telas e modais
+├── css/
+│   ├── style.css         # Design system, tema Vôlei de Praia e layout mobile-first
+│   └── components.css    # Cards touch-friendly de presença, galeria e modais
+├── js/
+│   ├── store.js          # Banco de dados local com seed e persistência reativa
+│   ├── quick-class.js    # Fluxo de chamada em 1-toque e envio de foto
+│   ├── whatsapp.js       # Integração com links wa.me
+│   ├── gallery.js        # Galeria central de fotos e filtros dinâmicos
+│   ├── reports.js        # Relatórios mensais e exportador CSV
+│   └── app.js            # Roteador SPA, modais e navegação
+├── vercel.json           # Configuração de deploy estático
+└── README.md             # Documentação em Português (PT-BR)
 ```
-
----
-
-## 🎨 Identidade Visual
-Desenvolvido com foco na experiência do usuário em quadra de areia sob luz solar intensa:
-- **Cores:** Azul Oceano (`#0369a1`), Areia Dourada (`#f59e0b`), Laranja Pôr do Sol (`#f97316`), Verde Presença (`#10b981`).
-- **Mobile-first:** Barra de navegação inferior mobile, botões de toque com altura mínima de 48px e cards arredondados.
