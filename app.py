@@ -21,7 +21,8 @@ from auth import (
 from seed_data import seed_database
 
 def create_app(config_class=Config, testing=False):
-    app = Flask(__name__)
+    static_folder_path = os.path.join(Config.BASE_DIR, 'static')
+    app = Flask(__name__, static_folder=static_folder_path, static_url_path='/static')
     app.config.from_object(config_class)
     if testing:
         app.config['TESTING'] = True

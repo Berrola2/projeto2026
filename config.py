@@ -6,6 +6,8 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 IS_VERCEL = os.environ.get('VERCEL') == '1' or bool(os.environ.get('VERCEL'))
 
 class Config:
+    BASE_DIR = BASE_DIR
+    IS_VERCEL = IS_VERCEL
     SECRET_KEY = os.environ.get('SECRET_KEY', 'chave-secreta-volei-praia-brasil-2026-super-segura')
     
     # Na Vercel, apenas o diretório /tmp é gravável para o SQLite e uploads
