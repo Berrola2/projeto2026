@@ -150,7 +150,7 @@ const App = {
       if (user.role === 'PROFESSOR') {
         headerNav.innerHTML = `
           <button class="nav-link ${this.currentRoute === '#/professor' ? 'active' : ''}" onclick="App.navigate('#/professor')">
-            <span>📊</span> Meu Painel
+            <span>📊</span> Painel
           </button>
           <button class="nav-link ${this.currentRoute === '#/aula/nova' ? 'active' : ''}" onclick="App.navigate('#/aula/nova')">
             <span>⚡</span> Nova Aula
@@ -171,7 +171,7 @@ const App = {
       } else {
         headerNav.innerHTML = `
           <button class="nav-link ${this.currentRoute === '#/admin' ? 'active' : ''}" onclick="App.navigate('#/admin')">
-            <span>📊</span> Painel (${arenaName})
+            <span>📊</span> Painel
           </button>
           <button class="nav-link ${this.currentRoute === '#/galeria' ? 'active' : ''}" onclick="App.navigate('#/galeria')">
             <span>📸</span> Galeria
