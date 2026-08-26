@@ -158,6 +158,7 @@ const App = {
           <button class="nav-link ${this.currentRoute === '#/fechamento' ? 'active' : ''}" onclick="App.navigate('#/fechamento')">
             <span>📅</span> Fechamento
           </button>
+          <span id="cloudSyncStatusBadge"></span>
           <div class="user-badge-header">
             <div class="user-badge-avatar">${initial}</div>
             <div class="user-badge-text">
@@ -188,6 +189,7 @@ const App = {
           <button class="nav-link ${this.currentRoute === '#/calendario' ? 'active' : ''}" onclick="App.navigate('#/calendario')">
             <span>🗓️</span> Calendário
           </button>
+          <span id="cloudSyncStatusBadge"></span>
           <div class="user-badge-header">
             <div class="user-badge-avatar" style="background: linear-gradient(135deg, #0284c7, #0369a1);">${initial}</div>
             <div class="user-badge-text">
@@ -198,6 +200,10 @@ const App = {
             <button class="user-badge-logout" onclick="App.handleLogout()" title="Sair do Sistema">🚪</button>
           </div>
         `;
+      }
+
+      if (window.SupabaseSync && typeof window.SupabaseSync.updateStatusBadge === 'function') {
+        window.SupabaseSync.updateStatusBadge();
       }
     }
 

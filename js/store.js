@@ -232,6 +232,11 @@ class Store {
       console.error('Erro ao salvar no localStorage:', e);
     }
     this.notify();
+
+    // Sincroniza automaticamente com o Supabase na nuvem
+    if (window.SupabaseSync && typeof window.SupabaseSync.pushToCloud === 'function') {
+      window.SupabaseSync.pushToCloud();
+    }
   }
 
   subscribe(listener) {
