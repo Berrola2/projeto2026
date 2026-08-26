@@ -2,12 +2,13 @@
  * ==========================================================================
  * SISTEMA DE GESTÃO DE AULAS DE VÔLEI DE PRAIA
  * Roteador de Telas (SPA), Navegação, Modais e Renderização
- * Suporte a Geração Automática de E-mail, Modalidades e Gestão de Professores
+ * Suporte a SUPER_ADMIN (@dev.com), Landing Pages de Arena e Multi-Tenant
  * ==========================================================================
  */
 
 const App = {
   currentRoute: '',
+  selectedDevTab: 'arenas',
 
   maskPhone(value) {
     if (!value) return '';
@@ -46,6 +47,8 @@ const App = {
       const user = window.store.getCurrentUser();
       if (!user) {
         window.location.hash = '#/login';
+      } else if (user.role === 'SUPER_ADMIN') {
+        window.location.hash = '#/dev';
       } else if (user.role === 'ADMIN') {
         window.location.hash = '#/admin';
       } else {
@@ -70,7 +73,12 @@ const App = {
 
     const user = window.store.getCurrentUser();
 
-    // Rotas públicas
+    // 1. Rotas Públicas (Sem necessidade de Login)
+    if (hash.startsWith('#/arena/')) {
+      const arenaSlugOrId = hash.replace('#/arena/', '');
+      this.renderArenaLandingPage(arenaSlugOrId);
+      return;
+    }
     if (hash === '#/login') {
       this.renderLogin();
       return;
@@ -89,16 +97,27 @@ const App = {
 
     this.renderNav();
 
-    // Roteamento baseado em RBAC
+    // 2. Rota de Super Administrador (DEV / Master @dev.com)
+    if (hash === '#/dev' || hash.startsWith('#/dev/')) {
+      if (user.role !== 'SUPER_ADMIN') {
+        this.showToast('Acesso restrito a desenvolvedores e master admins (@dev.com).', 'danger');
+        this.navigate(user.role === 'ADMIN' ? '#/admin' : '#/professor');
+        return;
+      }
+      this.renderSuperAdminDashboard();
+      return;
+    }
+
+    // 3. Roteamento baseado em RBAC
     if (hash === '#/professor') {
-      if (user.role !== 'PROFESSOR') {
+      if (user.role !== 'PROFESSOR' && user.role !== 'SUPER_ADMIN') {
         this.showToast('Você não possui permissão para acessar esta área.', 'danger');
         this.navigate('#/admin');
         return;
       }
       this.renderProfessorDashboard();
     } else if (hash === '#/aula/nova') {
-      if (user.role !== 'PROFESSOR') {
+      if (user.role !== 'PROFESSOR' && user.role !== 'SUPER_ADMIN') {
         this.showToast('Você não possui permissão para acessar esta área.', 'danger');
         this.navigate('#/admin');
         return;
@@ -109,14 +128,14 @@ const App = {
       const id = hash.replace('#/aula/', '');
       this.renderClassDetail(id);
     } else if (hash === '#/fechamento') {
-      if (user.role !== 'PROFESSOR') {
+      if (user.role !== 'PROFESSOR' && user.role !== 'SUPER_ADMIN') {
         this.showToast('Você não possui permissão para acessar esta área.', 'danger');
         this.navigate('#/admin');
         return;
       }
       this.renderMonthlyClose();
     } else if (hash === '#/admin') {
-      if (user.role !== 'ADMIN') {
+      if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
         this.showToast('Você não possui permissão para acessar esta área.', 'danger');
         this.navigate('#/professor');
         return;
@@ -137,7 +156,9 @@ const App = {
     } else if (hash === '#/calendario') {
       this.renderCalendar();
     } else {
-      this.navigate(user.role === 'ADMIN' ? '#/admin' : '#/professor');
+      if (user.role === 'SUPER_ADMIN') this.navigate('#/dev');
+      else if (user.role === 'ADMIN') this.navigate('#/admin');
+      else this.navigate('#/professor');
     }
   },
 
@@ -151,7 +172,7 @@ const App = {
   },
 
   // ----------------------------------------------------
-  // CABEÇALHO & BARRA INFERIOR COM VISUAL PREMIUM
+  // CABEÇALHO & BARRA DE NAVEGAÇÃO
   // ----------------------------------------------------
   renderNav() {
     const user = window.store.getCurrentUser();
@@ -164,13 +185,45 @@ const App = {
       return;
     }
 
-    const arenaObj = window.store.getArenaById(user.arenaId);
-    const arenaName = arenaObj ? arenaObj.name : 'Vôlei de Praia';
+    const arenaObj = user.arenaId ? window.store.getArenaById(user.arenaId) : null;
+    const arenaName = arenaObj ? arenaObj.name : (user.role === 'SUPER_ADMIN' ? 'Global SaaS' : 'Minha Arena');
     const initial = user.name ? user.name.trim().charAt(0).toUpperCase() : 'U';
 
-    // 1. Navegação Desktop (com badge ultra-elegante)
+    // 1. Navegação Desktop
     if (headerNav) {
-      if (user.role === 'PROFESSOR') {
+      if (user.role === 'SUPER_ADMIN') {
+        headerNav.innerHTML = `
+          <button class="nav-link ${this.currentRoute === '#/dev' ? 'active' : ''}" onclick="App.navigate('#/dev')">
+            <span>⚡</span> Painel Master
+          </button>
+          <button class="nav-link ${this.currentRoute === '#/arenas' ? 'active' : ''}" onclick="App.navigate('#/arenas')">
+            <span>🏖️</span> Arenas & Sites
+          </button>
+          <button class="nav-link ${this.currentRoute === '#/professores' ? 'active' : ''}" onclick="App.navigate('#/professores')">
+            <span>👨‍🏫</span> Professores
+          </button>
+          <button class="nav-link ${this.currentRoute === '#/alunos' ? 'active' : ''}" onclick="App.navigate('#/alunos')">
+            <span>👥</span> Alunos
+          </button>
+          <button class="nav-link ${this.currentRoute === '#/galeria' ? 'active' : ''}" onclick="App.navigate('#/galeria')">
+            <span>📸</span> Galeria Global
+          </button>
+          <button class="nav-link ${this.currentRoute === '#/relatorios' ? 'active' : ''}" onclick="App.navigate('#/relatorios')">
+            <span>📈</span> Relatórios
+          </button>
+          <div class="user-badge-header">
+            <div class="user-badge-avatar" style="background: linear-gradient(135deg, #8b5cf6, #ec4899);">${initial}</div>
+            <div class="user-badge-text">
+              <span>${user.name}</span>
+            </div>
+            <span class="user-badge-arena-tag" style="background: rgba(168, 85, 247, 0.25); border-color: #d8b4fe; color: #f3e8ff;">
+              🛠️ DEV / MASTER
+            </span>
+            <span class="role-pill" style="background: #a855f7; color: white;">SUPER ADMIN</span>
+            <button class="user-badge-logout" onclick="App.handleLogout()" title="Sair do Sistema">🚪</button>
+          </div>
+        `;
+      } else if (user.role === 'PROFESSOR') {
         headerNav.innerHTML = `
           <button class="nav-link ${this.currentRoute === '#/professor' ? 'active' : ''}" onclick="App.navigate('#/professor')">
             <span>📊</span> Painel
@@ -226,7 +279,26 @@ const App = {
 
     // 2. Navegação Mobile Inferior
     if (bottomNav) {
-      if (user.role === 'PROFESSOR') {
+      if (user.role === 'SUPER_ADMIN') {
+        bottomNav.innerHTML = `
+          <a class="bottom-nav-item ${this.currentRoute === '#/dev' ? 'active' : ''}" onclick="App.navigate('#/dev')">
+            <span class="icon">⚡</span>
+            <span>Master</span>
+          </a>
+          <a class="bottom-nav-item ${this.currentRoute === '#/arenas' ? 'active' : ''}" onclick="App.navigate('#/arenas')">
+            <span class="icon">🏖️</span>
+            <span>Arenas</span>
+          </a>
+          <a class="bottom-nav-item ${this.currentRoute === '#/galeria' ? 'active' : ''}" onclick="App.navigate('#/galeria')">
+            <span class="icon">📸</span>
+            <span>Galeria</span>
+          </a>
+          <a class="bottom-nav-item" onclick="App.handleLogout()">
+            <span class="icon">🚪</span>
+            <span>Sair</span>
+          </a>
+        `;
+      } else if (user.role === 'PROFESSOR') {
         bottomNav.innerHTML = `
           <a class="bottom-nav-item ${this.currentRoute === '#/professor' ? 'active' : ''}" onclick="App.navigate('#/professor')">
             <span class="icon">📊</span>
@@ -277,7 +349,7 @@ const App = {
   },
 
   // ----------------------------------------------------
-  // LOGIN
+  // LOGIN (FORMATADO CONFORME SOLICITADO)
   // ----------------------------------------------------
   renderLogin() {
     const container = document.getElementById('loginView');
@@ -300,10 +372,14 @@ const App = {
           <form onsubmit="App.handleLogin(event)">
             <div class="form-group">
               <label for="loginEmail" class="form-label">E-mail / Login Institucional</label>
-              <input type="email" id="loginEmail" class="form-control" placeholder="felipe.ilha@prof.com ou heitor.ilha@adm.com" required autofocus>
-              <div class="form-text">
-                Padrão automático: <code>(nome).(arena)@prof.com</code> ou <code>@adm.com</code>.
-              </div>
+              <input 
+                type="email" 
+                id="loginEmail" 
+                class="form-control" 
+                placeholder="(nome).(arena)@prof.com ou @adm.com" 
+                required 
+                autofocus
+              >
             </div>
 
             <div class="form-group">
@@ -323,36 +399,20 @@ const App = {
           </div>
         </div>
 
-        <!-- DEMO RÁPIDO POR ARENA (ISOLAMENTO MULTITENANT) -->
-        <div style="background: #f1f5f9; border-radius: 16px; padding: 1.2rem; margin-top: 1.5rem; font-size: 0.85rem; color: #475569; border: 1px solid #e2e8f0;">
-          <strong style="color: #0f172a; display: block; margin-bottom: 0.5rem;">🔒 Teste o Isolamento de Segurança por Arena:</strong>
+        <!-- DEMO RÁPIDO DE ACESSOS (MULTI-PERFIS) -->
+        <div style="background: #f8fafc; border-radius: 16px; padding: 1.2rem; margin-top: 1.5rem; font-size: 0.85rem; color: #475569; border: 1px solid #e2e8f0;">
+          <strong style="color: #0f172a; display: block; margin-bottom: 0.5rem;">🔑 Atalhos para Teste:</strong>
           
-          <div style="margin-bottom: 0.75rem;">
-            <span style="font-weight: 800; color: var(--primary-ocean);">🏖️ Arena Ilha:</span>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-top: 0.25rem;">
-              <button class="btn btn-sand btn-sm" onclick="App.quickFillLogin('felipe.ilha@prof.com', 'senha123')">
-                👨‍🏫 Prof. Felipe
-              </button>
-              <button class="btn btn-primary btn-sm" onclick="App.quickFillLogin('heitor.ilha@adm.com', 'senha123')">
-                🛡️ Gestor Heitor
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <span style="font-weight: 800; color: #ea580c;">🏖️ Arena Maroka (Isolada):</span>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-top: 0.25rem;">
-              <button class="btn btn-sand btn-sm" onclick="App.quickFillLogin('lucas.maroka@prof.com', 'senha123')">
-                👨‍🏫 Prof. Lucas
-              </button>
-              <button class="btn btn-primary btn-sm" onclick="App.quickFillLogin('marcos.maroka@adm.com', 'senha123')">
-                🛡️ Gestor Marcos
-              </button>
-            </div>
-          </div>
-          
-          <div style="margin-top: 0.65rem; font-size: 0.75rem; color: var(--text-muted);">
-            💡 <em>O Gestor da Ilha não vê as aulas e fotos postadas pela Arena Maroka!</em>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <button class="btn btn-sand btn-sm" onclick="App.quickFillLogin('felipe.ilha@prof.com', 'felipe.74912')">
+              👨‍🏫 Prof. Felipe (Arena Ilha)
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="App.quickFillLogin('heitor.ilha@adm.com', 'senha123')">
+              🛡️ Gestor Heitor (Arena Ilha)
+            </button>
+            <button class="btn btn-secondary btn-sm" style="background: #7c3aed; color: white; border: none;" onclick="App.quickFillLogin('admin.master@dev.com', 'senha123')">
+              🛠️ Master Dev (@dev.com - Super Admin Global)
+            </button>
           </div>
         </div>
 
@@ -376,9 +436,14 @@ const App = {
 
     const result = window.store.login(email, pass);
     if (result.success) {
-      const arenaName = window.store.getArenaById(result.user.arenaId)?.name || '';
-      this.showToast(`Bem-vindo(a), ${result.user.name}! (${arenaName})`, 'success');
-      this.navigate(result.user.role === 'ADMIN' ? '#/admin' : '#/professor');
+      this.showToast(`Bem-vindo(a), ${result.user.name}!`, 'success');
+      if (result.user.role === 'SUPER_ADMIN') {
+        this.navigate('#/dev');
+      } else if (result.user.role === 'ADMIN') {
+        this.navigate('#/admin');
+      } else {
+        this.navigate('#/professor');
+      }
     } else {
       this.showToast(result.error, 'danger');
     }
@@ -445,7 +510,7 @@ const App = {
 
             <div class="form-group" style="background: #f0fdf4; border: 2px dashed #86efac; padding: 1rem; border-radius: var(--radius-md);">
               <label for="regEmail" class="form-label" style="color: #166534;">
-                ⚡ E-mail / Login Gerado Automaticamente:
+                ⚡ Login Gerado Automaticamente:
               </label>
               <input 
                 type="email" 
@@ -527,7 +592,9 @@ const App = {
     const result = window.store.register(name, email, phone, arenaId, role, pass, passConf);
     if (result.success) {
       this.showToast(`Conta criada com sucesso! Login: ${result.user.email}`, 'success');
-      this.navigate(result.user.role === 'ADMIN' ? '#/admin' : '#/professor');
+      if (result.user.role === 'SUPER_ADMIN') this.navigate('#/dev');
+      else if (result.user.role === 'ADMIN') this.navigate('#/admin');
+      else this.navigate('#/professor');
     } else {
       this.showToast(result.error, 'danger');
     }
@@ -540,6 +607,468 @@ const App = {
   },
 
   // ----------------------------------------------------
+  // PAINEL MASTER / SUPER ADMIN (DEV @dev.com)
+  // ----------------------------------------------------
+  renderSuperAdminDashboard() {
+    const container = document.getElementById('superAdminDashboardView');
+    if (!container) return;
+
+    const metrics = window.store.getGlobalMetrics();
+    const arenas = window.store.getAllArenasGlobal();
+    const managers = window.store.getManagers();
+
+    container.innerHTML = `
+      <div>
+        
+        <!-- HEADER MASTER DEV -->
+        <div style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%); color: white; padding: 1.75rem 2rem; border-radius: var(--radius-lg); margin-bottom: 2rem; box-shadow: var(--shadow-lg);">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <span style="font-size: 0.8rem; font-weight: 800; color: #c7d2fe; text-transform: uppercase; letter-spacing: 0.08em; background: rgba(255,255,255,0.15); padding: 0.2rem 0.6rem; border-radius: var(--radius-full);">
+                🛠️ Painel Global de Engenharia / Master
+              </span>
+              <h1 style="font-size: 2.1rem; color: white; margin-top: 0.4rem; font-family: var(--font-heading);">
+                Controle Master Multi-Tenant ⚡
+              </h1>
+              <p style="color: #e0e7ff; font-size: 0.95rem; margin-top: 0.25rem;">
+                Gerenciamento global de Arenas, Gestores, Landing Pages e provisionamento de novos ambientes SaaS.
+              </p>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button class="btn btn-sand" onclick="App.openModal('newArenaModal')">
+                <span>➕</span> Provisionar Nova Arena
+              </button>
+              <button class="btn btn-primary" onclick="App.openModal('newManagerModal')">
+                <span>🛡️</span> Cadastrar Gestor
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPIS GLOBAIS DO SAAS -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon">🏖️</div>
+            <div class="kpi-label">Arenas Ativas</div>
+            <div class="kpi-value">${metrics.totalArenas}</div>
+            <div style="font-size: 0.75rem; color: var(--primary-ocean);">Instâncias Multi-tenant</div>
+          </div>
+
+          <div class="kpi-card emerald">
+            <div class="kpi-icon">👥</div>
+            <div class="kpi-label">Alunos Globais</div>
+            <div class="kpi-value">${metrics.totalStudents}</div>
+            <div style="font-size: 0.75rem; color: #059669;">Em todas as arenas</div>
+          </div>
+
+          <div class="kpi-card gold">
+            <div class="kpi-icon">👨‍🏫</div>
+            <div class="kpi-label">Professores</div>
+            <div class="kpi-value">${metrics.totalProfessors}</div>
+            <div style="font-size: 0.75rem; color: #d97706;">${metrics.totalManagers} gestores ativos</div>
+          </div>
+
+          <div class="kpi-card orange">
+            <div class="kpi-icon">📸</div>
+            <div class="kpi-label">Aulas / Fotos</div>
+            <div class="kpi-value">${metrics.totalClasses}</div>
+            <div style="font-size: 0.75rem; color: #ea580c;">${metrics.totalPhotos} fotos sincronizadas</div>
+          </div>
+        </div>
+
+        <!-- SELEÇÃO DE ABAS MASTER -->
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem;">
+          <button class="btn ${this.selectedDevTab === 'arenas' ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="App.switchDevTab('arenas')">
+            🏖️ Arenas & Sites Públicos (${arenas.length})
+          </button>
+          <button class="btn ${this.selectedDevTab === 'managers' ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="App.switchDevTab('managers')">
+            🛡️ Gestores de Arena (${managers.length})
+          </button>
+          <button class="btn ${this.selectedDevTab === 'overview' ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="App.switchDevTab('overview')">
+            📊 Auditoria por Arena
+          </button>
+        </div>
+
+        <!-- CONTEÚDO DA ABA SELECIONADA -->
+        ${this.renderDevTabContent(arenas, managers, metrics)}
+
+      </div>
+    `;
+
+    this.showView('superAdminDashboardView');
+  },
+
+  switchDevTab(tab) {
+    this.selectedDevTab = tab;
+    this.renderSuperAdminDashboard();
+  },
+
+  renderDevTabContent(arenas, managers, metrics) {
+    if (this.selectedDevTab === 'arenas') {
+      return `
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title"><span>🏖️</span> Arenas Cadastradas & Landing Pages Provisionadas</h2>
+            <button class="btn btn-sand btn-sm" onclick="App.openModal('newArenaModal')">+ Nova Arena</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Arena / ID</th>
+                  <th>Subdomínio / Slug</th>
+                  <th>Localização</th>
+                  <th>Alunos / Aulas</th>
+                  <th class="text-center">Landing Page Pública</th>
+                  <th class="text-center">Ações Master</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${arenas.map(a => {
+                  const cfg = window.store.getTenantConfig(a.id);
+                  const stCount = window.store.getStudents(a.id).length;
+                  const clsCount = window.store.state.classes.filter(c => c.arenaId === a.id).length;
+                  const slug = a.slug || cfg.slug || `arena-${a.id}`;
+
+                  return `
+                    <tr>
+                      <td class="font-bold">
+                        <div style="font-size: 1.05rem; color: var(--primary-deep);">${a.name}</div>
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">Tenant ID: #${a.id}</span>
+                      </td>
+                      <td>
+                        <code style="background: #e0e7ff; color: #4338ca; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: 4px;">
+                          /arena/${slug}
+                        </code>
+                      </td>
+                      <td style="font-size: 0.85rem; color: var(--text-muted); max-width: 250px;">${a.location}</td>
+                      <td>
+                        <strong>${stCount}</strong> alunos &bull; <strong>${clsCount}</strong> aulas
+                      </td>
+                      <td class="text-center">
+                        <a href="#/arena/${slug}" target="_blank" class="btn btn-primary btn-sm" style="text-decoration: none;">
+                          🌐 Abrir Site Público
+                        </a>
+                      </td>
+                      <td class="text-center">
+                        <div style="display: inline-flex; gap: 0.35rem;">
+                          <button class="btn btn-secondary btn-sm" onclick="App.openEditArenaConfigModal(${a.id})" title="Editar Configurações da Landing Page">
+                            ⚙️
+                          </button>
+                          <button class="btn btn-secondary btn-sm" style="color: #ef4444;" onclick="App.handleDeleteArena(${a.id}, '${a.name}')" title="Excluir Arena">
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    if (this.selectedDevTab === 'managers') {
+      return `
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title"><span>🛡️</span> Gestores e Administradores de Arena (@adm.com)</h2>
+            <button class="btn btn-primary btn-sm" onclick="App.openModal('newManagerModal')">+ Novo Gestor</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Nome do Gestor</th>
+                  <th>Arena Vinculada</th>
+                  <th>Login Institucional (@adm.com)</th>
+                  <th>Telefone</th>
+                  <th class="text-center">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${managers.map(m => {
+                  const arena = window.store.getArenaById(m.arenaId);
+                  const arenaName = arena ? arena.name : `Arena #${m.arenaId}`;
+
+                  return `
+                    <tr>
+                      <td class="font-bold">${m.name}</td>
+                      <td>
+                        <span class="badge" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a;">
+                          📍 ${arenaName}
+                        </span>
+                      </td>
+                      <td><code style="font-weight: 800; color: #0369a1;">${m.email}</code></td>
+                      <td>${m.phone ? App.maskPhone(m.phone) : '-'}</td>
+                      <td class="text-center">
+                        <div style="display: inline-flex; gap: 0.35rem;">
+                          <button class="btn btn-whatsapp btn-sm" onclick="App.openManagerCredentialsModal(${m.id})" title="Ver Credenciais e Encaminhar WhatsApp">
+                            📲 Acesso
+                          </button>
+                          <button class="btn btn-secondary btn-sm" style="color: #ef4444;" onclick="App.handleDeleteManager(${m.id}, '${m.name}')" title="Remover Gestor">
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title"><span>📊</span> Desempenho Consolidado por Tenant (Arena)</h2>
+        </div>
+
+        <div class="table-responsive">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Arena</th>
+                <th>Aulas Realizadas</th>
+                <th>Alunos Cadastrados</th>
+                <th>Professores</th>
+                <th>Gestores</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${metrics.arenaStats.map(stat => `
+                <tr>
+                  <td class="font-bold">${stat.arena.name}</td>
+                  <td><strong style="color: var(--primary-ocean);">${stat.classesCount}</strong> aulas</td>
+                  <td><strong>${stat.studentsCount}</strong> alunos</td>
+                  <td>${stat.professorsCount} professores</td>
+                  <td>${stat.managersCount} gestores</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  },
+
+  // ----------------------------------------------------
+  // PÁGINA INICIAL / LANDING PAGE DINÂMICA DA ARENA (#/arena/:slug)
+  // ----------------------------------------------------
+  renderArenaLandingPage(idOrSlug) {
+    const container = document.getElementById('arenaLandingView');
+    if (!container) return;
+
+    const arena = window.store.getArenaById(idOrSlug) || window.store.state.arenas.find(a => a.slug === idOrSlug) || window.store.state.arenas[0];
+    if (!arena) {
+      this.showToast('Arena não encontrada.', 'danger');
+      this.navigate('#/login');
+      return;
+    }
+
+    const config = window.store.getTenantConfig(arena.id);
+    const professors = window.store.getProfessors(arena.id);
+    const classes = window.store.getClasses({ arenaId: arena.id }).slice(0, 4);
+
+    container.innerHTML = `
+      <div class="arena-landing-wrapper">
+        
+        <!-- HERO BANNER DA ARENA -->
+        <div class="arena-hero-banner" style="background: linear-gradient(135deg, ${config.primaryColor || '#0f2b48'} 0%, #0369a1 100%);">
+          <div class="arena-hero-content">
+            <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.18); backdrop-filter: blur(8px); padding: 0.35rem 0.9rem; border-radius: var(--radius-full); margin-bottom: 1rem;">
+              <span>🏖️</span>
+              <span style="font-weight: 800; font-size: 0.85rem; color: #fef08a;">Arena Oficial de Esportes de Areia</span>
+            </div>
+
+            <h1 style="font-size: 2.75rem; font-family: var(--font-heading); font-weight: 900; line-height: 1.1; margin-bottom: 0.75rem;">
+              ${arena.name}
+            </h1>
+            
+            <p style="font-size: 1.2rem; color: #e0f2fe; max-width: 680px; margin: 0 auto 1.5rem auto;">
+              ${config.tagline || 'Aulas diárias de Vôlei de Praia, Beach Tennis e Futevôlei com metodologia profissional.'}
+            </p>
+
+            <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+              <a href="https://wa.me/?text=${encodeURIComponent(`Olá! Gostaria de informações sobre as aulas na ${arena.name}.`)}" target="_blank" class="btn btn-sand btn-lg" style="box-shadow: 0 10px 25px rgba(245, 158, 11, 0.4); text-decoration: none;">
+                <span>📲</span> Agendar Aula Experimental
+              </a>
+              <a href="#/login" class="btn btn-outline btn-lg" style="background: rgba(255,255,255,0.12); color: white; border-color: rgba(255,255,255,0.3); text-decoration: none;">
+                <span>👤</span> Portal do Aluno & Professor
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODALIDADES & INFORMAÇÕES DA ARENA -->
+        <div style="max-width: 1100px; margin: 3rem auto; padding: 0 1rem;">
+          
+          <div style="text-align: center; margin-bottom: 2.5rem;">
+            <span style="font-size: 0.85rem; font-weight: 800; color: var(--primary-ocean); text-transform: uppercase; letter-spacing: 0.05em;">
+              O que oferecemos
+            </span>
+            <h2 style="font-size: 2rem; color: var(--primary-deep); margin-top: 0.25rem;">
+              Modalidades em Destaque na ${arena.name}
+            </h2>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+            ${(config.modalities || ['Vôlei de Praia 🏐', 'Beach Tennis 🎾', 'Futevôlei ⚽']).map(mod => `
+              <div class="card" style="text-align: center; padding: 2rem 1.5rem; border-top: 4px solid ${config.accentColor || '#f59e0b'};">
+                <div style="font-size: 3rem; margin-bottom: 0.75rem;">${mod.split(' ')[1] || '🏐'}</div>
+                <h3 style="font-size: 1.3rem; color: var(--primary-deep); margin-bottom: 0.5rem;">${mod.split(' ')[0]}</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">
+                  Aulas para iniciantes, intermediários e avançados com horários matutinos e noturnos.
+                </p>
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- LOCALIZAÇÃO & CONTATO -->
+          <div class="card" style="margin-top: 3rem; background: linear-gradient(135deg, #f8fafc, #f1f5f9); border: 2px dashed #cbd5e1; padding: 2.5rem 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
+              <div>
+                <span style="font-size: 0.85rem; font-weight: 800; color: #0284c7; text-transform: uppercase;">
+                  Onde Estamos
+                </span>
+                <h3 style="font-size: 1.6rem; color: var(--primary-deep); margin-top: 0.25rem;">
+                  📍 ${arena.location}
+                </h3>
+                <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.35rem;">
+                  ${config.description || 'Quadras oficiais com areia tratada, iluminação LED e vestiários.'}
+                </p>
+                <div style="margin-top: 0.75rem; font-weight: 700; color: var(--primary-ocean);">
+                  Instagram: <strong>${config.instagram || '@arena.beach'}</strong> &bull; WhatsApp: <strong>${config.whatsappContact || '(21) 9 9999-9999'}</strong>
+                </div>
+              </div>
+
+              <button class="btn btn-whatsapp btn-lg" onclick="window.open('https://wa.me/?text=${encodeURIComponent(`Olá! Quero tirar dúvidas sobre a ${arena.name}.`)}', '_blank')">
+                <span>📲</span> Falar no WhatsApp
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    `;
+
+    this.showView('arenaLandingView');
+  },
+
+  handleCreateManager(event) {
+    event.preventDefault();
+    const name = document.getElementById('new_mgr_name').value;
+    const arenaId = document.getElementById('new_mgr_arena').value;
+    const phone = document.getElementById('new_mgr_phone').value;
+
+    const res = window.store.addManager({ name, arenaId, phone });
+    if (res.success) {
+      this.closeModal('newManagerModal');
+      this.showToast('Gestor cadastrado com sucesso!', 'success');
+      this.renderSuperAdminDashboard();
+      this.showCreatedManagerCredentials(res.manager, res.generatedPassword);
+    } else {
+      this.showToast(res.error, 'danger');
+    }
+  },
+
+  showCreatedManagerCredentials(manager, password) {
+    const arena = window.store.getArenaById(manager.arenaId);
+    const arenaName = arena ? arena.name : 'Arena';
+
+    document.getElementById('cred_prof_name').textContent = manager.name;
+    document.getElementById('cred_prof_modality').textContent = 'Administração / Gestão 🛡️';
+    document.getElementById('cred_prof_arena').textContent = arenaName;
+    document.getElementById('cred_prof_email').textContent = manager.email;
+    document.getElementById('cred_prof_password').textContent = password || manager.initialPassword || 'senha123';
+
+    const linkApp = window.location.origin + window.location.pathname + '#/login';
+    const message = `Olá, ${manager.name}! Sua conta de Gestor da ${arenaName} foi criada com sucesso. 🛡️\n\n` +
+      `🔗 Link de Acesso: ${linkApp}\n` +
+      `📧 Login: ${manager.email}\n` +
+      `🔑 Senha: ${password || manager.initialPassword || 'senha123'}\n\n` +
+      `Tenha uma excelente gestão!`;
+
+    const btnWhatsApp = document.getElementById('btnForwardProfWhatsApp');
+    if (btnWhatsApp) {
+      btnWhatsApp.onclick = () => {
+        const phone = (manager.phone || '').replace(/\D/g, '');
+        window.open(`https://wa.me/${phone ? phone : ''}?text=${encodeURIComponent(message)}`, '_blank');
+      };
+    }
+
+    const btnCopy = document.getElementById('btnCopyCredentials');
+    if (btnCopy) {
+      btnCopy.onclick = () => {
+        navigator.clipboard.writeText(message);
+        this.showToast('Dados de acesso copiados!', 'success');
+      };
+    }
+
+    this.openModal('profCredentialsCreatedModal');
+  },
+
+  openManagerCredentialsModal(mgrId) {
+    const mgr = window.store.state.users.find(u => u.id === Number(mgrId));
+    if (!mgr) return;
+    this.showCreatedManagerCredentials(mgr, mgr.initialPassword || 'senha123');
+  },
+
+  handleDeleteArena(id, name) {
+    if (confirm(`⚠️ ATENÇÃO DEV: Deseja realmente excluir a "${name}" e todos os seus dados associados?`)) {
+      window.store.deleteArena(id);
+      this.showToast(`Arena "${name}" excluída com sucesso.`, 'info');
+      this.renderSuperAdminDashboard();
+    }
+  },
+
+  handleDeleteManager(id, name) {
+    if (confirm(`Deseja remover o gestor "${name}"?`)) {
+      window.store.deleteManager(id);
+      this.showToast(`Gestor "${name}" removido.`, 'info');
+      this.renderSuperAdminDashboard();
+    }
+  },
+
+  openEditArenaConfigModal(arenaId) {
+    const arena = window.store.getArenaById(arenaId);
+    if (!arena) return;
+    const cfg = window.store.getTenantConfig(arenaId);
+
+    document.getElementById('cfg_arena_id').value = arena.id;
+    document.getElementById('cfg_arena_name_label').textContent = arena.name;
+    document.getElementById('cfg_arena_slug').value = cfg.slug || arena.slug || '';
+    document.getElementById('cfg_arena_tagline').value = cfg.tagline || '';
+    document.getElementById('cfg_arena_whatsapp').value = cfg.whatsappContact || '';
+    document.getElementById('cfg_arena_instagram').value = cfg.instagram || '';
+
+    this.openModal('editArenaConfigModal');
+  },
+
+  handleSaveTenantConfig(event) {
+    event.preventDefault();
+    const arenaId = document.getElementById('cfg_arena_id').value;
+    const slug = sanitizeSlug(document.getElementById('cfg_arena_slug').value);
+    const tagline = document.getElementById('cfg_arena_tagline').value;
+    const whatsappContact = document.getElementById('cfg_arena_whatsapp').value;
+    const instagram = document.getElementById('cfg_arena_instagram').value;
+
+    window.store.saveTenantConfig(arenaId, { slug, tagline, whatsappContact, instagram });
+    this.closeModal('editArenaConfigModal');
+    this.showToast('Configurações da Landing Page salvas com sucesso!', 'success');
+    this.renderSuperAdminDashboard();
+  },
+
+  // ----------------------------------------------------
   // GESTÃO DE PROFESSORES: MODALIDADES, SENHA INICIAL & DEMISSÃO
   // ----------------------------------------------------
   renderProfessores() {
@@ -548,21 +1077,21 @@ const App = {
 
     const user = window.store.getCurrentUser();
     const professors = window.store.getProfessors();
-    const arena = window.store.getArenaById(user.arenaId);
-    const arenaName = arena ? arena.name : 'Arena';
+    const arena = user.arenaId ? window.store.getArenaById(user.arenaId) : null;
+    const arenaName = arena ? arena.name : (user.role === 'SUPER_ADMIN' ? 'Todas as Arenas (Global)' : 'Minha Arena');
 
     container.innerHTML = `
       <div>
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
           <div>
             <span style="font-size: 0.85rem; font-weight: 800; color: #0284c7; text-transform: uppercase;">
-              Corpo Docente da ${arenaName}
+              ${arenaName}
             </span>
             <h1 style="font-size: 1.85rem; color: var(--primary-deep); margin-top: 0.15rem;">
-              Professores da Arena 👨‍🏫
+              Professores Cadastrados 👨‍🏫
             </h1>
             <p style="color: var(--text-muted); font-size: 0.95rem;">
-              Controle de modalidades, senhas iniciais e gestão do corpo docente da <strong>${arenaName}</strong>.
+              Controle de modalidades, senhas iniciais e gestão de instrutores.
             </p>
           </div>
 
@@ -577,6 +1106,7 @@ const App = {
               <thead>
                 <tr>
                   <th>Nome do Professor</th>
+                  <th>Arena</th>
                   <th>Modalidade</th>
                   <th>Login (@prof.com)</th>
                   <th>Telefone</th>
@@ -586,7 +1116,8 @@ const App = {
               </thead>
               <tbody>
                 ${professors.length > 0 ? professors.map(p => {
-                  const clsCount = window.store.state.classes.filter(c => c.professorId === p.id && c.arenaId === user.arenaId).length;
+                  const pArena = window.store.getArenaById(p.arenaId)?.name || 'Arena';
+                  const clsCount = window.store.state.classes.filter(c => c.professorId === p.id).length;
                   const initial = p.name ? p.name.charAt(0).toUpperCase() : 'P';
                   const modality = p.modality || 'Vôlei de Praia 🏐';
 
@@ -597,6 +1128,9 @@ const App = {
                           <div class="student-avatar" style="width:36px; height:36px; font-size:0.9rem;">${initial}</div>
                           <span>${p.name}</span>
                         </div>
+                      </td>
+                      <td>
+                        <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 700;">📍 ${pArena}</span>
                       </td>
                       <td>
                         <span class="badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;">
@@ -620,8 +1154,8 @@ const App = {
                   `;
                 }).join('') : `
                   <tr>
-                    <td colspan="6" class="text-center text-muted" style="padding: 2.5rem;">
-                      Nenhum professor cadastrado nesta arena ainda.
+                    <td colspan="7" class="text-center text-muted" style="padding: 2.5rem;">
+                      Nenhum professor cadastrado ainda.
                     </td>
                   </tr>
                 `}
@@ -637,7 +1171,7 @@ const App = {
 
   openNewProfModal() {
     const user = window.store.getCurrentUser();
-    const arena = window.store.getArenaById(user.arenaId);
+    const arena = user.arenaId ? window.store.getArenaById(user.arenaId) : window.store.state.arenas[0];
     const arenaName = arena ? arena.name : 'Arena';
 
     const modalArenaSpan = document.getElementById('new_prof_arena_label');
@@ -660,7 +1194,7 @@ const App = {
     if (!nameInput || !emailInput) return;
 
     const user = window.store.getCurrentUser();
-    const arena = window.store.getArenaById(user.arenaId);
+    const arena = user.arenaId ? window.store.getArenaById(user.arenaId) : window.store.state.arenas[0];
     const arenaName = arena ? arena.name : 'ilha';
 
     const autoEmail = window.store.generateEmail(nameInput.value, arenaName, 'PROFESSOR');
@@ -683,8 +1217,6 @@ const App = {
       this.closeModal('newProfModal');
       this.showToast('Professor cadastrado com sucesso!', 'success');
       this.renderProfessores();
-
-      // Abre modal com a senha inicial gerada para o gestor encaminhar
       this.showCreatedCredentialsModal(res.professor, res.generatedPassword);
     } else {
       this.showToast(res.error, 'danger');
@@ -693,7 +1225,7 @@ const App = {
 
   showCreatedCredentialsModal(prof, password) {
     const user = window.store.getCurrentUser();
-    const arena = window.store.getArenaById(user.arenaId);
+    const arena = window.store.getArenaById(prof.arenaId);
     const arenaName = arena ? arena.name : 'Arena';
 
     document.getElementById('cred_prof_name').textContent = prof.name;
@@ -973,7 +1505,7 @@ const App = {
   },
 
   // ----------------------------------------------------
-  // PAINEL DO ADMINISTRADOR
+  // PAINEL DO ADMINISTRADOR DE ARENA
   // ----------------------------------------------------
   renderAdminDashboard() {
     const container = document.getElementById('adminDashboardView');
@@ -981,7 +1513,7 @@ const App = {
 
     const user = window.store.getCurrentUser();
     const arenaObj = window.store.getArenaById(user.arenaId);
-    const currentArenaName = arenaObj ? arenaObj.name : 'Todas as Arenas';
+    const currentArenaName = arenaObj ? arenaObj.name : 'Minha Arena';
 
     const today = new Date().toISOString().split('T')[0];
     const todayBr = today.split('-').reverse().join('/');
@@ -1013,10 +1545,10 @@ const App = {
           <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
             <div>
               <span style="font-size: 0.85rem; font-weight: 800; color: #0284c7; text-transform: uppercase; letter-spacing: 0.05em;">
-                🛡️ Gestão Isolada: ${currentArenaName}
+                🛡️ Gestão: ${currentArenaName}
               </span>
               <h1 style="font-size: 1.85rem; color: var(--primary-deep); margin-top: 0.15rem;">
-                Painel Administrativo da ${currentArenaName} 📊
+                Painel da ${currentArenaName} 📊
               </h1>
               <p style="color: var(--text-muted); font-size: 0.95rem;">
                 Visualização segura e restrita aos dados, professores e alunos da <strong>${currentArenaName}</strong> em ${todayBr}.
@@ -1161,7 +1693,7 @@ const App = {
   },
 
   // ----------------------------------------------------
-  // GESTÃO DE ALUNOS (ISOLADA)
+  // GESTÃO DE ALUNOS (ISOLADA POR ARENA OU GLOBAL PARA DEV)
   // ----------------------------------------------------
   renderStudents() {
     const container = document.getElementById('studentsView');
@@ -1169,21 +1701,21 @@ const App = {
 
     const user = window.store.getCurrentUser();
     const students = window.store.getStudents();
-    const arena = window.store.getArenaById(user.arenaId);
-    const arenaName = arena ? arena.name : 'Arena';
+    const arena = user.arenaId ? window.store.getArenaById(user.arenaId) : null;
+    const arenaName = arena ? arena.name : (user.role === 'SUPER_ADMIN' ? 'Todas as Arenas (Global)' : 'Minha Arena');
 
     container.innerHTML = `
       <div>
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
           <div>
             <span style="font-size: 0.85rem; font-weight: 800; color: #0284c7; text-transform: uppercase; letter-spacing: 0.05em;">
-              Alunos da ${arenaName}
+              ${arenaName}
             </span>
             <h1 style="font-size: 1.85rem; color: var(--primary-deep); margin-top: 0.15rem;">
               Gestão de Alunos & Turmas 👥
             </h1>
             <p style="color: var(--text-muted); font-size: 0.95rem;">
-              Total de <strong>${students.length}</strong> alunos matriculados na <strong>${arenaName}</strong>.
+              Total de <strong>${students.length}</strong> alunos matriculados.
             </p>
           </div>
 
@@ -1207,10 +1739,11 @@ const App = {
               </thead>
               <tbody>
                 ${students.map(s => {
+                  const sArena = window.store.getArenaById(s.arenaId)?.name || 'Arena';
                   return `
                     <tr>
                       <td class="font-bold">${s.name}</td>
-                      <td>${arenaName}</td>
+                      <td><span style="font-weight: 700; color: var(--text-muted);">📍 ${sArena}</span></td>
                       <td><span style="font-weight:700; color:var(--primary-ocean);">${s.groupName || 'Geral'}</span></td>
                       <td>${s.phone ? App.maskPhone(s.phone) : '-'}</td>
                       <td style="color:var(--text-muted); font-size:0.85rem;">${s.email || '-'}</td>
@@ -1247,6 +1780,7 @@ const App = {
     const container = document.getElementById('arenasView');
     if (!container) return;
 
+    const user = window.store.getCurrentUser();
     const arenas = window.store.getArenas();
 
     container.innerHTML = `
@@ -1254,38 +1788,59 @@ const App = {
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
           <div>
             <span style="font-size: 0.85rem; font-weight: 800; color: #0284c7; text-transform: uppercase;">
-              Infraestrutura
+              Infraestrutura & Sites
             </span>
             <h1 style="font-size: 1.85rem; color: var(--primary-deep); margin-top: 0.15rem;">
-              Minha Arena de Vôlei 🏖️
+              Arenas & Landing Pages 🏖️
             </h1>
             <p style="color: var(--text-muted); font-size: 0.95rem;">
-              Dados cadastrais da sua quadra.
+              Lista de quadras e seus portais públicos independentes na web.
             </p>
           </div>
+
+          ${user.role === 'SUPER_ADMIN' ? `
+            <button class="btn btn-sand" onclick="App.openModal('newArenaModal')">
+              <span>➕</span> Provisionar Nova Arena
+            </button>
+          ` : ''}
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr; gap: 1.25rem;">
           ${arenas.map(a => {
             const stCount = window.store.getStudents(a.id).length;
             const clsCount = window.store.state.classes.filter(c => c.arenaId === a.id).length;
+            const slug = a.slug || `arena-${a.id}`;
+
             return `
               <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
                 <div>
                   <div style="display: flex; align-items: center; gap: 0.5rem;">
                     <span style="font-size: 1.6rem;">🏖️</span>
                     <h2 style="font-size: 1.25rem; color: var(--primary-deep);">${a.name}</h2>
+                    <span class="badge" style="background: #e0f2fe; color: #0369a1;">#/arena/${slug}</span>
                   </div>
                   <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem;">
                     📍 ${a.location}
                   </p>
                 </div>
 
-                <div style="display: flex; gap: 1.25rem; align-items: center;">
-                  <div style="text-align: right;">
+                <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                  <div style="text-align: right; margin-right: 0.5rem;">
                     <div style="font-size: 1.15rem; font-weight: 900; color: var(--primary-ocean);">${stCount} Alunos</div>
                     <div style="font-size: 0.8rem; color: var(--text-muted);">${clsCount} Aulas registradas</div>
                   </div>
+
+                  <a href="#/arena/${slug}" target="_blank" class="btn btn-primary btn-sm" style="text-decoration: none;">
+                    🌐 Ver Site da Arena
+                  </a>
+                  ${user.role === 'SUPER_ADMIN' ? `
+                    <button class="btn btn-secondary btn-sm" onclick="App.openEditArenaConfigModal(${a.id})" title="Configurar Landing Page">
+                      ⚙️
+                    </button>
+                    <button class="btn btn-secondary btn-sm" style="color: #ef4444;" onclick="App.handleDeleteArena(${a.id}, '${a.name}')" title="Excluir Arena">
+                      🗑️
+                    </button>
+                  ` : ''}
                 </div>
               </div>
             `;
@@ -1302,27 +1857,28 @@ const App = {
     if (!container) return;
 
     const user = window.store.getCurrentUser();
-    const arena = window.store.getArenaById(user.arenaId);
-    const arenaName = arena ? arena.name : 'Arena';
+    const arena = user.arenaId ? window.store.getArenaById(user.arenaId) : null;
+    const arenaName = arena ? arena.name : 'Minha Arena';
     const classes = window.store.getClasses();
 
     container.innerHTML = `
       <div>
         <div style="margin-bottom: 1.5rem;">
           <span style="font-size: 0.85rem; font-weight: 800; color: #0284c7; text-transform: uppercase;">
-            Cronograma da ${arenaName}
+            Cronograma: ${arenaName}
           </span>
           <h1 style="font-size: 1.85rem; color: var(--primary-deep); margin-top: 0.15rem;">
             Calendário de Aulas 🗓️
           </h1>
           <p style="color: var(--text-muted); font-size: 0.95rem;">
-            Sessões ministradas na <strong>${arenaName}</strong>.
+            Sessões ministradas em quadra.
           </p>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 1rem;">
           ${classes.map(c => {
             const prof = window.store.getProfessorById(c.professorId)?.name || 'Professor';
+            const cArena = window.store.getArenaById(c.arenaId)?.name || 'Arena';
             const dateParts = c.date.split('-');
             const formattedDate = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : c.date;
 
@@ -1344,7 +1900,7 @@ const App = {
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
                   <div>
                     <div style="font-weight: 800; font-size: 1.1rem; color: var(--primary-deep);">
-                      📅 ${formattedDate} às ${c.time || ''} &bull; ${arenaName}
+                      📅 ${formattedDate} às ${c.time || ''} &bull; ${cArena}
                     </div>
                     <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.2rem;">
                       <strong>Turma:</strong> ${c.groupName} &bull; <strong>Professor:</strong> ${prof} &bull; <strong>Presentes:</strong> ${presents}/${total} alunos
@@ -1378,7 +1934,7 @@ const App = {
 
     if (!cls) {
       this.showToast('Você não possui permissão para acessar esta aula ou ela não existe.', 'danger');
-      this.navigate(user?.role === 'ADMIN' ? '#/admin' : '#/professor');
+      this.navigate(user?.role === 'SUPER_ADMIN' ? '#/dev' : (user?.role === 'ADMIN' ? '#/admin' : '#/professor'));
       return;
     }
 
@@ -1406,7 +1962,7 @@ const App = {
       <div style="max-width: 800px; margin: 0 auto;">
         
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
-          <button class="btn btn-secondary btn-sm" onclick="App.navigate('${user.role === 'ADMIN' ? '#/admin' : '#/professor'}')">
+          <button class="btn btn-secondary btn-sm" onclick="App.navigate('${user.role === 'SUPER_ADMIN' ? '#/dev' : (user.role === 'ADMIN' ? '#/admin' : '#/professor')}')">
             &larr; Voltar ao Painel
           </button>
           
@@ -1509,7 +2065,7 @@ const App = {
                 ${(cls.attendances || []).map(att => {
                   const student = window.store.state.students.find(s => s.id === att.studentId);
                   const stName = student ? student.name : `Aluno #${att.studentId}`;
-                  const stPhone = student ? (student.phone || '-') : '-';
+                  const stPhone = student ? (student.phone ? App.maskPhone(student.phone) : '-') : '-';
 
                   return `
                     <tr>

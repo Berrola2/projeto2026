@@ -1,13 +1,13 @@
 /**
  * ==========================================================================
  * SISTEMA DE GESTÃO DE AULAS DE VÔLEI DE PRAIA
- * Gerenciador de Estado e Banco de Dados Local (localStorage)
- * Geração Automática de E-mail: (nome).(arena)@(funcao).com
- * Isolamento Multitenant por Arena (Segurança Estrita para Venda SaaS)
+ * Gerenciador de Estado e Banco de Dados (Suporte a Supabase & Multi-tenant)
+ * Suporte a RBAC: SUPER_ADMIN (@dev.com), ADMIN (@adm.com), PROFESSOR (@prof.com)
  * ==========================================================================
  */
 
 const ALLOWED_DOMAINS = {
+  'dev.com': 'SUPER_ADMIN',
   'prof.com': 'PROFESSOR',
   'adm.com': 'ADMIN',
   'arenaadm.com': 'ADMIN'
@@ -25,13 +25,17 @@ function sanitizeSlug(text) {
 
 // Gera e-mail no formato oficial: (primeiro_nome).(arena)@(funcao).com
 function generateAutomaticEmail(name, arenaName, role) {
-  if (!name || !arenaName) return '';
+  if (!name) return '';
   
   const firstName = sanitizeSlug(name.trim().split(' ')[0]);
   
+  if (role === 'SUPER_ADMIN') {
+    return `${firstName || 'dev'}.master@dev.com`;
+  }
+
   // Limpa prefixos comuns de arena como "Arena ", "Praia ", etc.
-  let cleanArena = arenaName.replace(/^Arena\s+/i, '').replace(/^Praia\s+/i, '').trim();
-  cleanArena = sanitizeSlug(cleanArena.split(' ')[0]);
+  let cleanArena = (arenaName || 'arena').replace(/^Arena\s+/i, '').replace(/^Praia\s+/i, '').trim();
+  cleanArena = sanitizeSlug(cleanArena.split(' ')[0]) || 'arena';
 
   const domain = (role === 'PROFESSOR') ? 'prof.com' : 'adm.com';
   
@@ -79,7 +83,7 @@ function generateSamplePhotoSvg(title, arenaName, bgColor, accentColor) {
   return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
 }
 
-// Dados Iniciais de Fábrica Multitenant
+// Dados Iniciais de Fábrica Multitenant com Suporte a DEV/SuperAdmin
 function getDefaultData() {
   const today = new Date().toISOString().split('T')[0];
   const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
@@ -91,59 +95,108 @@ function getDefaultData() {
   return {
     currentUser: null,
     arenas: [
-      { id: 1, name: 'Arena Ilha', location: 'Praia da Bica, Ilha do Governador - Rio de Janeiro, RJ' },
-      { id: 2, name: 'Arena Maroka', location: 'Av. Maroka Beach, Posto 2 - Niterói, RJ' },
-      { id: 3, name: 'Arena Ipanema Beach', location: 'Av. Vieira Souto, Posto 9 - Ipanema, Rio de Janeiro, RJ' },
-      { id: 4, name: 'Arena Copacabana Sun', location: 'Av. Atlântica, Posto 4 - Copacabana, Rio de Janeiro, RJ' }
+      { id: 1, name: 'Arena Ilha', slug: 'ilha', location: 'Praia da Bica, Ilha do Governador - Rio de Janeiro, RJ' },
+      { id: 2, name: 'Arena Maroka', slug: 'maroka', location: 'Av. Maroka Beach, Posto 2 - Niterói, RJ' },
+      { id: 3, name: 'Arena Ipanema Beach', slug: 'ipanema', location: 'Av. Vieira Souto, Posto 9 - Ipanema, Rio de Janeiro, RJ' },
+      { id: 4, name: 'Arena Copacabana Sun', slug: 'copacabana', location: 'Av. Atlântica, Posto 4 - Copacabana, Rio de Janeiro, RJ' }
+    ],
+    tenantConfigs: [
+      {
+        arenaId: 1,
+        slug: 'ilha',
+        tagline: 'O melhor centro de treinamento de esportes de areia da Ilha',
+        primaryColor: '#0369a1',
+        accentColor: '#f59e0b',
+        whatsappContact: '(21) 9 8888-0001',
+        instagram: '@arenailha.beach',
+        description: 'Estrutura com 4 quadras iluminadas, vestiários e professores certificados.',
+        modalities: ['Vôlei de Praia 🏐', 'Beach Tennis 🎾', 'Funcional de Areia 🏃‍♂️']
+      },
+      {
+        arenaId: 2,
+        slug: 'maroka',
+        tagline: 'A arena mais vibrante de Niterói para treinar e se divertir',
+        primaryColor: '#1e3a8a',
+        accentColor: '#ea580c',
+        whatsappContact: '(21) 9 8888-0002',
+        instagram: '@arenamaroka.oficial',
+        description: 'Treinos de Futevôlei e Vôlei de Praia todos os dias do iniciante ao avançado.',
+        modalities: ['Futevôlei ⚽', 'Vôlei de Praia 🏐', 'Altinha ☀️']
+      },
+      {
+        arenaId: 3,
+        slug: 'ipanema',
+        tagline: 'Treine com a vista mais icônica do Rio de Janeiro',
+        primaryColor: '#0e7490',
+        accentColor: '#f59e0b',
+        whatsappContact: '(21) 9 7777-3003',
+        instagram: '@ipanemabeach.sports',
+        description: 'Metodologia exclusiva para alta performance e aulas recreativas.',
+        modalities: ['Vôlei de Praia 🏐', 'Beach Tennis 🎾']
+      },
+      {
+        arenaId: 4,
+        slug: 'copacabana',
+        tagline: 'Tradição e energia no berço do vôlei de praia mundial',
+        primaryColor: '#0284c7',
+        accentColor: '#10b981',
+        whatsappContact: '(21) 9 7777-4004',
+        instagram: '@copasun.arena',
+        description: 'Aulas matinais e noturnas para todas as idades no Posto 4.',
+        modalities: ['Vôlei de Praia 🏐', 'Beach Tennis 🎾', 'Funcional 🏃‍♂️']
+      }
     ],
     users: [
+      // SUPER ADMIN / MASTER DEVELOPER (@dev.com)
+      { id: 99, name: 'Master Developer', email: 'admin.master@dev.com', role: 'SUPER_ADMIN', arenaId: null, phone: '(21) 9 9999-9999' },
+
       // ARENA ILHA (Isolamento 1)
-      { id: 1, name: 'Heitor Augusto', email: 'heitor.ilha@adm.com', role: 'ADMIN', arenaId: 1, phone: '(21) 98888-0001' },
-      { id: 2, name: 'Felipe Gabriel', email: 'felipe.ilha@prof.com', role: 'PROFESSOR', arenaId: 1, modality: 'Vôlei de Praia 🏐', initialPassword: 'felipe.74912', phone: '(21) 97777-1001' },
+      { id: 1, name: 'Heitor Augusto', email: 'heitor.ilha@adm.com', role: 'ADMIN', arenaId: 1, phone: '(21) 9 8888-0001' },
+      { id: 2, name: 'Felipe Gabriel', email: 'felipe.ilha@prof.com', role: 'PROFESSOR', arenaId: 1, modality: 'Vôlei de Praia 🏐', initialPassword: 'felipe.74912', phone: '(21) 9 7777-1001' },
       
       // ARENA MAROKA (Isolamento 2)
-      { id: 3, name: 'Marcos Gestor', email: 'marcos.maroka@adm.com', role: 'ADMIN', arenaId: 2, phone: '(21) 98888-0002' },
-      { id: 4, name: 'Lucas Treinador', email: 'lucas.maroka@prof.com', role: 'PROFESSOR', arenaId: 2, modality: 'Futevôlei ⚽', initialPassword: 'lucas.83910', phone: '(21) 97777-2002' },
+      { id: 3, name: 'Marcos Gestor', email: 'marcos.maroka@adm.com', role: 'ADMIN', arenaId: 2, phone: '(21) 9 8888-0002' },
+      { id: 4, name: 'Lucas Treinador', email: 'lucas.maroka@prof.com', role: 'PROFESSOR', arenaId: 2, modality: 'Futevôlei ⚽', initialPassword: 'lucas.83910', phone: '(21) 9 7777-2002' },
 
       // OUTRAS ARENAS
-      { id: 5, name: 'Carlos Silva', email: 'carlos.ipanema@prof.com', role: 'PROFESSOR', arenaId: 3, modality: 'Vôlei de Praia 🏐', initialPassword: 'carlos.61823', phone: '(21) 97777-3003' },
-      { id: 6, name: 'Ana Souza', email: 'ana.copacabana@prof.com', role: 'PROFESSOR', arenaId: 4, modality: 'Beach Tennis 🎾', initialPassword: 'ana.94120', phone: '(21) 97777-4004' }
+      { id: 5, name: 'Carlos Silva', email: 'carlos.ipanema@prof.com', role: 'PROFESSOR', arenaId: 3, modality: 'Vôlei de Praia 🏐', initialPassword: 'carlos.61823', phone: '(21) 9 7777-3003' },
+      { id: 6, name: 'Ana Souza', email: 'ana.copacabana@prof.com', role: 'PROFESSOR', arenaId: 4, modality: 'Beach Tennis 🎾', initialPassword: 'ana.94120', phone: '(21) 9 7777-4004' }
     ],
     students: [
       // Alunos Arena Ilha (ID: 1)
-      { id: 1, name: 'Gabriel Martins', phone: '(21) 99111-2233', email: 'gabriel@email.com', arenaId: 1, groupName: 'Iniciante Manhã' },
-      { id: 2, name: 'Beatriz Lima', phone: '(21) 99222-3344', email: 'beatriz@email.com', arenaId: 1, groupName: 'Iniciante Manhã' },
-      { id: 3, name: 'Lucas Oliveira', phone: '(21) 99333-4455', email: 'lucas@email.com', arenaId: 1, groupName: 'Iniciante Manhã' },
-      { id: 4, name: 'Mariana Costa', phone: '(21) 99444-5566', email: 'mariana@email.com', arenaId: 1, groupName: 'Iniciante Manhã' },
-      { id: 5, name: 'Felipe Santos', phone: '(21) 99555-6677', email: 'felipe@email.com', arenaId: 1, groupName: 'Intermediário Noite' },
-      { id: 6, name: 'Camila Rocha', phone: '(21) 99666-7788', email: 'camila@email.com', arenaId: 1, groupName: 'Intermediário Noite' },
+      { id: 1, name: 'Gabriel Martins', phone: '(21) 9 9111-2233', email: 'gabriel@email.com', arenaId: 1, groupName: 'Iniciante Manhã' },
+      { id: 2, name: 'Beatriz Lima', phone: '(21) 9 9222-3344', email: 'beatriz@email.com', arenaId: 1, groupName: 'Iniciante Manhã' },
+      { id: 3, name: 'Lucas Oliveira', phone: '(21) 9 9333-4455', email: 'lucas@email.com', arenaId: 1, groupName: 'Iniciante Manhã' },
+      { id: 4, name: 'Mariana Costa', phone: '(21) 9 9444-5566', email: 'mariana@email.com', arenaId: 1, groupName: 'Iniciante Manhã' },
+      { id: 5, name: 'Felipe Santos', phone: '(21) 9 9555-6677', email: 'felipe@email.com', arenaId: 1, groupName: 'Intermediário Noite' },
+      { id: 6, name: 'Camila Rocha', phone: '(21) 9 9666-7788', email: 'camila@email.com', arenaId: 1, groupName: 'Intermediário Noite' },
 
       // Alunos Arena Maroka (ID: 2)
-      { id: 7, name: 'Rodrigo Alves', phone: '(21) 99345-6789', email: 'rodrigo@email.com', arenaId: 2, groupName: 'Iniciante Manhã' },
-      { id: 8, name: 'Fernanda Gomes', phone: '(21) 99456-7890', email: 'fernanda@email.com', arenaId: 2, groupName: 'Iniciante Manhã' },
-      { id: 9, name: 'Marcelo Dias', phone: '(21) 99567-8901', email: 'marcelo@email.com', arenaId: 2, groupName: 'Intermediário Noite' },
-      { id: 10, name: 'Patricia Ramos', phone: '(21) 99678-9012', email: 'patricia@email.com', arenaId: 2, groupName: 'Intermediário Noite' },
+      { id: 7, name: 'Rodrigo Alves', phone: '(21) 9 9345-6789', email: 'rodrigo@email.com', arenaId: 2, groupName: 'Iniciante Manhã' },
+      { id: 8, name: 'Fernanda Gomes', phone: '(21) 9 9456-7890', email: 'fernanda@email.com', arenaId: 2, groupName: 'Iniciante Manhã' },
+      { id: 9, name: 'Marcelo Dias', phone: '(21) 9 9567-8901', email: 'marcelo@email.com', arenaId: 2, groupName: 'Intermediário Noite' },
+      { id: 10, name: 'Patricia Ramos', phone: '(21) 9 9678-9012', email: 'patricia@email.com', arenaId: 2, groupName: 'Intermediário Noite' },
 
       // Alunos Arena Ipanema (ID: 3)
-      { id: 11, name: 'Thiago Mendes', phone: '(21) 99777-8899', email: 'thiago@email.com', arenaId: 3, groupName: 'Avançado Tarde' },
-      { id: 12, name: 'Juliana Paiva', phone: '(21) 99888-9900', email: 'juliana@email.com', arenaId: 3, groupName: 'Avançado Tarde' },
+      { id: 11, name: 'Thiago Mendes', phone: '(21) 9 9777-8899', email: 'thiago@email.com', arenaId: 3, groupName: 'Avançado Tarde' },
+      { id: 12, name: 'Juliana Paiva', phone: '(21) 9 9888-9900', email: 'juliana@email.com', arenaId: 3, groupName: 'Avançado Tarde' },
 
       // Alunos Arena Copacabana (ID: 4)
-      { id: 13, name: 'Vinicius Barbosa', phone: '(21) 99890-1234', email: 'vinicius@email.com', arenaId: 4, groupName: 'Iniciante Manhã' },
-      { id: 14, name: 'Aline Guimarães', phone: '(21) 99901-2345', email: 'aline@email.com', arenaId: 4, groupName: 'Iniciante Manhã' }
+      { id: 13, name: 'Vinicius Barbosa', phone: '(21) 9 9890-1234', email: 'vinicius@email.com', arenaId: 4, groupName: 'Iniciante Manhã' },
+      { id: 14, name: 'Aline Guimarães', phone: '(21) 9 9901-2345', email: 'aline@email.com', arenaId: 4, groupName: 'Iniciante Manhã' }
     ],
     classes: [
-      // Aula 1: Prof. Felipe na Arena Ilha (ID: 1) - Enviada WhatsApp
+      // Aula 1: Prof. Felipe na Arena Ilha (ID: 1)
       {
         id: 1,
         professorId: 2,
         arenaId: 1,
-        date: today,
-        time: '07:30',
         groupName: 'Iniciante Manhã',
-        observations: 'Treino de saque e recepção na Arena Ilha.',
-        photoStatus: 'READY_TO_SEND',
+        date: today,
+        time: '07:00 - 08:30',
+        observations: 'Treino de recepção e fundamentos básicos na rede.',
         photoUrl: photoIlha,
+        photoStatus: 'READY_TO_SEND',
         attendances: [
           { studentId: 1, present: true },
           { studentId: 2, present: true },
@@ -151,52 +204,38 @@ function getDefaultData() {
           { studentId: 4, present: false }
         ]
       },
-      // Aula 2: Prof. Felipe na Arena Ilha (ID: 1) - Ontem
+      // Aula 2: Prof. Felipe na Arena Ilha (ID: 1)
       {
         id: 2,
         professorId: 2,
         arenaId: 1,
-        date: yesterday,
-        time: '18:30',
         groupName: 'Intermediário Noite',
-        observations: 'Táticas de bloqueio e levantamento.',
-        photoStatus: 'RECEIVED',
+        date: yesterday,
+        time: '19:00 - 20:30',
+        observations: 'Treino de levantamento acelerado e contra-ataque.',
         photoUrl: photoIlha,
+        photoStatus: 'RECEIVED',
         attendances: [
           { studentId: 5, present: true },
           { studentId: 6, present: true }
         ]
       },
-      // Aula 3: Prof. Lucas na Arena Maroka (ID: 2) - Exclusivo da Maroka!
+      // Aula 3: Prof. Lucas na Arena Maroka (ID: 2)
       {
         id: 3,
         professorId: 4,
         arenaId: 2,
+        groupName: 'Intermediário Noite',
         date: today,
-        time: '08:00',
-        groupName: 'Iniciante Manhã',
-        observations: 'Aula inaugural na Arena Maroka.',
-        photoStatus: 'READY_TO_SEND',
+        time: '18:30 - 20:00',
+        observations: 'Treino tático de futevôlei e posicionamento defensivo.',
         photoUrl: photoMaroka,
+        photoStatus: 'RECEIVED',
         attendances: [
           { studentId: 7, present: true },
-          { studentId: 8, present: true }
-        ]
-      },
-      // Aula 4: Prof. Carlos na Arena Ipanema (ID: 3)
-      {
-        id: 4,
-        professorId: 5,
-        arenaId: 3,
-        date: today,
-        time: '16:00',
-        groupName: 'Avançado Tarde',
-        observations: 'Treino avançado sob vento.',
-        photoStatus: 'RECEIVED',
-        photoUrl: photoIpanema,
-        attendances: [
-          { studentId: 11, present: true },
-          { studentId: 12, present: true }
+          { studentId: 8, present: true },
+          { studentId: 9, present: true },
+          { studentId: 10, present: false }
         ]
       }
     ]
@@ -205,7 +244,7 @@ function getDefaultData() {
 
 class Store {
   constructor() {
-    this.STORAGE_KEY = 'VOLEI_PRAIA_DB_v3';
+    this.STORAGE_KEY = 'VOLEI_PRAIA_DB_v4';
     this.listeners = [];
     this.state = this.load();
   }
@@ -259,17 +298,17 @@ class Store {
 
   validateEmailDomain(email) {
     if (!email || !email.includes('@')) {
-      return { valid: false, role: null, error: 'Este e-mail não possui permissão para acessar o sistema.' };
+      return { valid: false, role: null, error: 'E-mail inválido. Utilize um e-mail institucional.' };
     }
     const parts = email.trim().toLowerCase().split('@');
     if (parts.length !== 2) {
-      return { valid: false, role: null, error: 'Este e-mail não possui permissão para acessar o sistema.' };
+      return { valid: false, role: null, error: 'E-mail inválido.' };
     }
     const domain = parts[1];
     if (ALLOWED_DOMAINS[domain]) {
       return { valid: true, role: ALLOWED_DOMAINS[domain], error: null };
     }
-    return { valid: false, role: null, error: 'Este e-mail não possui permissão para acessar o sistema.' };
+    return { valid: false, role: null, error: 'Apenas e-mails institucionais autorizados (@prof.com, @adm.com ou @dev.com) possuem acesso.' };
   }
 
   login(email, password) {
@@ -282,14 +321,14 @@ class Store {
 
     let user = this.state.users.find(u => u.email.toLowerCase() === cleanEmail);
 
-    // Se o usuário não existir no seed, mas possui domínio institucional autorizado, auto-cadastra com arena padrão
+    // Se o usuário não existir no seed mas possui domínio institucional autorizado, auto-cadastra
     if (!user) {
       user = {
         id: Date.now(),
         name: cleanEmail.split('@')[0].replace('.', ' ').toUpperCase(),
         email: cleanEmail,
         role: validation.role,
-        arenaId: 1, // Padrão
+        arenaId: validation.role === 'SUPER_ADMIN' ? null : 1,
         phone: ''
       };
       this.state.users.push(user);
@@ -319,20 +358,20 @@ class Store {
       return { success: false, error: validation.error };
     }
 
-    const exists = this.state.users.find(u => u.email.toLowerCase() === cleanEmail);
-    if (exists) {
-      this.state.currentUser = exists;
-      this.save();
-      return { success: true, user: exists };
+    const existing = this.state.users.find(u => u.email.toLowerCase() === cleanEmail);
+    if (existing) {
+      return { success: false, error: 'Este e-mail já está cadastrado no sistema.' };
     }
 
+    const newId = this.state.users.length > 0 ? Math.max(...this.state.users.map(u => u.id)) + 1 : 1;
     const newUser = {
-      id: Date.now(),
-      name: name.trim(),
+      id: newId,
+      name,
       email: cleanEmail,
+      phone: phone || '',
+      arenaId: validation.role === 'SUPER_ADMIN' ? null : Number(arenaId),
       role: validation.role,
-      arenaId: Number(arenaId) || 1,
-      phone: (phone || '').trim()
+      createdAt: new Date().toISOString()
     };
 
     this.state.users.push(newUser);
@@ -351,58 +390,104 @@ class Store {
   }
 
   // ----------------------------------------------------
-  // ISOLAMENTO MULTITENANT POR ARENA (SEGURANÇA ESTRITA)
+  // GESTÃO MULTITENANT GLOBAL (DEV / SUPER_ADMIN)
   // ----------------------------------------------------
-  getUserArenaId() {
-    const user = this.getCurrentUser();
-    return user ? user.arenaId : null;
+  getGlobalMetrics() {
+    const totalArenas = this.state.arenas.length;
+    const totalUsers = this.state.users.length;
+    const totalProfessors = this.state.users.filter(u => u.role === 'PROFESSOR').length;
+    const totalManagers = this.state.users.filter(u => u.role === 'ADMIN').length;
+    const totalStudents = this.state.students.length;
+    const totalClasses = this.state.classes.length;
+    const totalPhotos = this.state.classes.filter(c => c.photoUrl).length;
+
+    const arenaStats = this.state.arenas.map(a => {
+      const cls = this.state.classes.filter(c => c.arenaId === a.id);
+      const st = this.state.students.filter(s => s.arenaId === a.id);
+      const pr = this.state.users.filter(u => u.role === 'PROFESSOR' && u.arenaId === a.id);
+      const mg = this.state.users.filter(u => u.role === 'ADMIN' && u.arenaId === a.id);
+      return {
+        arena: a,
+        classesCount: cls.length,
+        studentsCount: st.length,
+        professorsCount: pr.length,
+        managersCount: mg.length
+      };
+    });
+
+    return {
+      totalArenas,
+      totalUsers,
+      totalProfessors,
+      totalManagers,
+      totalStudents,
+      totalClasses,
+      totalPhotos,
+      arenaStats
+    };
   }
 
-  getUserArena() {
-    const user = this.getCurrentUser();
-    if (!user || !user.arenaId) return null;
-    return this.getArenaById(user.arenaId);
+  getTenantConfig(arenaIdOrSlug) {
+    if (!this.state.tenantConfigs) this.state.tenantConfigs = [];
+    
+    let config = this.state.tenantConfigs.find(c => c.arenaId === Number(arenaIdOrSlug) || c.slug === arenaIdOrSlug);
+    if (!config) {
+      const arena = this.getArenaById(arenaIdOrSlug) || this.state.arenas.find(a => a.slug === arenaIdOrSlug);
+      if (arena) {
+        config = {
+          arenaId: arena.id,
+          slug: arena.slug || sanitizeSlug(arena.name),
+          tagline: `Aulas e Treinos de Esportes de Areia na ${arena.name}`,
+          primaryColor: '#0369a1',
+          accentColor: '#f59e0b',
+          whatsappContact: '(21) 9 9999-9999',
+          instagram: `@${sanitizeSlug(arena.name)}.beach`,
+          description: `Venha treinar com a melhor estrutura na ${arena.location}.`,
+          modalities: ['Vôlei de Praia 🏐', 'Beach Tennis 🎾', 'Futevôlei ⚽']
+        };
+      }
+    }
+    return config;
   }
 
-  // Retorna aulas respeitando estritamente o isolamento da Arena
+  saveTenantConfig(arenaId, config) {
+    if (!this.state.tenantConfigs) this.state.tenantConfigs = [];
+    const index = this.state.tenantConfigs.findIndex(c => c.arenaId === Number(arenaId));
+    if (index >= 0) {
+      this.state.tenantConfigs[index] = { ...this.state.tenantConfigs[index], ...config };
+    } else {
+      this.state.tenantConfigs.push({ arenaId: Number(arenaId), ...config });
+    }
+    this.save();
+  }
+
+  // ----------------------------------------------------
+  // GESTÃO DE AULAS COM ISOLAMENTO POR ARENA
+  // ----------------------------------------------------
   getClasses(filters = {}) {
     const user = this.getCurrentUser();
     let list = [...this.state.classes];
 
-    // Se for PROFESSOR: só vê as suas próprias aulas
-    if (user && user.role === 'PROFESSOR') {
-      list = list.filter(c => c.professorId === user.id);
-    } 
-    // Se for GESTOR/ADMIN DA ARENA: SÓ VÊ AULAS DA SUA ARENA!
-    else if (user && user.role === 'ADMIN' && user.arenaId) {
+    // Se for gestor (ADMIN), isola obrigatoriamente para a sua arena
+    if (user && user.role === 'ADMIN' && user.arenaId) {
       list = list.filter(c => c.arenaId === user.arenaId);
-    }
-
-    // Filtros adicionais manuais
-    if (filters.professorId) {
-      list = list.filter(c => c.professorId === Number(filters.professorId));
-    }
-    if (filters.arenaId) {
+    } else if (user && user.role === 'PROFESSOR') {
+      list = list.filter(c => c.professorId === user.id);
+    } else if (filters.arenaId) {
       list = list.filter(c => c.arenaId === Number(filters.arenaId));
     }
+
     if (filters.date) {
       list = list.filter(c => c.date === filters.date);
+    }
+    if (filters.professorId) {
+      list = list.filter(c => c.professorId === Number(filters.professorId));
     }
     if (filters.groupName && filters.groupName !== 'TODAS') {
       list = list.filter(c => c.groupName === filters.groupName);
     }
-    if (filters.photoStatus && filters.photoStatus !== 'TODOS') {
-      list = list.filter(c => c.photoStatus === filters.photoStatus);
-    }
 
-    // Ordenação decrescente de data/hora
-    list.sort((a, b) => {
-      const dtA = new Date(`${a.date}T${a.time || '00:00'}`);
-      const dtB = new Date(`${b.date}T${b.time || '00:00'}`);
-      return dtB - dtA;
-    });
-
-    return list;
+    return list.sort((a, b) => new Date(b.date + 'T' + (b.time?.split(' ')[0] || '00:00')) - new Date(a.date + 'T' + (a.time?.split(' ')[0] || '00:00')));
   }
 
   getClassById(id) {
@@ -410,35 +495,36 @@ class Store {
     if (!cls) return null;
 
     const user = this.getCurrentUser();
-    if (!user) return null;
-
-    // Regra de segurança: se professor, só vê se for dele
-    if (user.role === 'PROFESSOR' && cls.professorId !== user.id) {
+    // Se for gestor e a aula não for da arena dele, bloqueia (RBAC / Multitenant)
+    if (user && user.role === 'ADMIN' && user.arenaId && cls.arenaId !== user.arenaId) {
       return null;
     }
-    // Regra de segurança: se gestor de arena, só vê se for da sua arena
-    if (user.role === 'ADMIN' && user.arenaId && cls.arenaId !== user.arenaId) {
+    // Se for professor e a aula não for dele, bloqueia
+    if (user && user.role === 'PROFESSOR' && cls.professorId !== user.id) {
       return null;
     }
 
     return cls;
   }
 
-  createClass(data) {
+  createClass(classData) {
     const user = this.getCurrentUser();
+    const targetArenaId = (user && user.role === 'ADMIN' && user.arenaId) ? user.arenaId : (classData.arenaId ? Number(classData.arenaId) : (user?.arenaId || 1));
+    const targetProfId = (user && user.role === 'PROFESSOR') ? user.id : Number(classData.professorId || user?.id || 1);
+
     const newId = this.state.classes.length > 0 ? Math.max(...this.state.classes.map(c => c.id)) + 1 : 1;
-    
     const newClass = {
       id: newId,
-      professorId: user ? user.id : data.professorId,
-      arenaId: Number(data.arenaId) || (user ? user.arenaId : 1),
-      date: data.date,
-      time: data.time,
-      groupName: data.groupName,
-      observations: data.observations || '',
-      photoStatus: data.photoUrl ? 'RECEIVED' : 'PENDING',
-      photoUrl: data.photoUrl || null,
-      attendances: data.attendances || []
+      date: classData.date,
+      time: classData.time || '07:00 - 08:30',
+      arenaId: targetArenaId,
+      professorId: targetProfId,
+      groupName: classData.groupName || 'Iniciante Manhã',
+      observations: classData.observations || '',
+      photoUrl: classData.photoUrl || null,
+      photoStatus: classData.photoUrl ? 'RECEIVED' : 'PENDING',
+      attendances: classData.attendances || [],
+      createdAt: new Date().toISOString()
     };
 
     this.state.classes.unshift(newClass);
@@ -466,7 +552,7 @@ class Store {
   }
 
   // ----------------------------------------------------
-  // GESTÃO DE ALUNOS, ARENAS E PROFESSORES (COM ISOLAMENTO)
+  // GESTÃO DE ALUNOS, ARENAS E PROFESSORES
   // ----------------------------------------------------
   getStudents(arenaId = null, query = '') {
     const user = this.getCurrentUser();
@@ -497,7 +583,7 @@ class Store {
       phone: data.phone || '',
       email: data.email || '',
       arenaId: targetArenaId,
-      groupName: data.groupName || 'Geral'
+      groupName: data.groupName || 'Iniciante Manhã'
     };
     this.state.students.push(newStudent);
     this.save();
@@ -524,29 +610,67 @@ class Store {
     return [...this.state.arenas].sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  getArenaById(id) {
-    return this.state.arenas.find(a => a.id === Number(id));
+  getArenaById(idOrSlug) {
+    return this.state.arenas.find(a => a.id === Number(idOrSlug) || a.slug === idOrSlug);
   }
 
   addArena(data) {
     const newId = this.state.arenas.length > 0 ? Math.max(...this.state.arenas.map(a => a.id)) + 1 : 1;
+    const slug = data.slug || sanitizeSlug(data.name.replace(/^Arena\s+/i, ''));
     const newArena = {
       id: newId,
       name: data.name,
+      slug: slug,
       location: data.location
     };
     this.state.arenas.push(newArena);
+
+    // Inicializa a configuração da landing page da nova arena
+    this.saveTenantConfig(newId, {
+      slug,
+      tagline: data.tagline || `Aulas e Treinos de Esportes de Areia na ${data.name}`,
+      primaryColor: data.primaryColor || '#0369a1',
+      accentColor: data.accentColor || '#f59e0b',
+      whatsappContact: data.whatsappContact || '(21) 9 9999-9999',
+      instagram: data.instagram || `@${slug}.beach`,
+      description: data.description || `Estrutura de ponta na ${data.location}.`,
+      modalities: ['Vôlei de Praia 🏐', 'Beach Tennis 🎾', 'Futevôlei ⚽']
+    });
+
     this.save();
     return newArena;
   }
 
-  getProfessors() {
+  deleteArena(id) {
+    const arenaId = Number(id);
+    this.state.arenas = this.state.arenas.filter(a => a.id !== arenaId);
+    this.state.users = this.state.users.filter(u => u.arenaId !== arenaId);
+    this.state.students = this.state.students.filter(s => s.arenaId !== arenaId);
+    this.state.classes = this.state.classes.filter(c => c.arenaId !== arenaId);
+    if (this.state.tenantConfigs) {
+      this.state.tenantConfigs = this.state.tenantConfigs.filter(c => c.arenaId !== arenaId);
+    }
+    this.save();
+    return { success: true };
+  }
+
+  getProfessors(arenaId = null) {
     const user = this.getCurrentUser();
     let list = this.state.users.filter(u => u.role === 'PROFESSOR');
 
     // Se o gestor for de uma arena específica, lista apenas professores da sua arena
     if (user && user.role === 'ADMIN' && user.arenaId) {
       list = list.filter(p => p.arenaId === user.arenaId);
+    } else if (arenaId) {
+      list = list.filter(p => p.arenaId === Number(arenaId));
+    }
+    return list.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  getManagers(arenaId = null) {
+    let list = this.state.users.filter(u => u.role === 'ADMIN');
+    if (arenaId) {
+      list = list.filter(m => m.arenaId === Number(arenaId));
     }
     return list.sort((a, b) => a.name.localeCompare(b.name));
   }
@@ -561,7 +685,6 @@ class Store {
     const arenaObj = this.getArenaById(targetArenaId);
     const arenaName = arenaObj ? arenaObj.name : 'Arena';
 
-    // Gera o e-mail automaticamente se não foi fornecido
     let email = data.email;
     if (!email) {
       email = generateAutomaticEmail(data.name, arenaName, 'PROFESSOR');
@@ -591,127 +714,142 @@ class Store {
     return { success: true, professor: newProf, generatedPassword, email: email.toLowerCase() };
   }
 
+  addManager(data) {
+    const targetArenaId = Number(data.arenaId || 1);
+    const arenaObj = this.getArenaById(targetArenaId);
+    const arenaName = arenaObj ? arenaObj.name : 'Arena';
+
+    let email = data.email;
+    if (!email) {
+      email = generateAutomaticEmail(data.name, arenaName, 'ADMIN');
+    }
+
+    const validation = this.validateEmailDomain(email);
+    if (!validation.valid || validation.role !== 'ADMIN') {
+      return { success: false, error: 'O e-mail gerado do gestor deve possuir domínio @adm.com.' };
+    }
+
+    const generatedPassword = generateInitialPassword(data.name);
+
+    const newId = this.state.users.length > 0 ? Math.max(...this.state.users.map(u => u.id)) + 1 : 1;
+    const newManager = {
+      id: newId,
+      name: data.name,
+      email: email.toLowerCase(),
+      arenaId: targetArenaId,
+      phone: data.phone || '',
+      role: 'ADMIN',
+      initialPassword: generatedPassword,
+      createdAt: new Date().toISOString()
+    };
+    this.state.users.push(newManager);
+    this.save();
+    return { success: true, manager: newManager, generatedPassword, email: email.toLowerCase() };
+  }
+
   deleteProfessor(id) {
     this.state.users = this.state.users.filter(u => u.id !== Number(id));
     this.save();
     return { success: true };
   }
 
-  // ----------------------------------------------------
-  // RELATÓRIOS E EXPORTAÇÃO CSV COM ISOLAMENTO DE ARENA
-  // ----------------------------------------------------
-  getMonthlyMetrics(month, year, professorId = null) {
-    const m = Number(month);
-    const y = Number(year);
-    const user = this.getCurrentUser();
+  deleteManager(id) {
+    this.state.users = this.state.users.filter(u => u.id !== Number(id));
+    this.save();
+    return { success: true };
+  }
 
-    let classes = this.getClasses().filter(c => {
+  // ----------------------------------------------------
+  // RELATÓRIOS E EXPORTAÇÃO CSV
+  // ----------------------------------------------------
+  getMonthlyMetrics(month, year, professorId = null, arenaId = null) {
+    const user = this.getCurrentUser();
+    let list = this.state.classes.filter(c => {
       const d = new Date(c.date + 'T00:00:00');
-      const matchMonth = (d.getMonth() + 1) === m && d.getFullYear() === y;
-      if (!matchMonth) return false;
-      if (professorId) return c.professorId === Number(professorId);
-      return true;
+      return (d.getMonth() + 1) === Number(month) && d.getFullYear() === Number(year);
     });
 
-    const totalClasses = classes.length;
-    let totalSlots = 0;
-    let totalPresents = 0;
-    let totalAbsents = 0;
-    let totalPhotos = 0;
-    let pendingPhotos = 0;
+    if (user && user.role === 'ADMIN' && user.arenaId) {
+      list = list.filter(c => c.arenaId === user.arenaId);
+    } else if (arenaId) {
+      list = list.filter(c => c.arenaId === Number(arenaId));
+    }
 
-    classes.forEach(c => {
+    if (professorId) {
+      list = list.filter(c => c.professorId === Number(professorId));
+    }
+
+    let totalPresents = 0;
+    let totalSlots = 0;
+    let totalPhotos = 0;
+
+    list.forEach(c => {
+      if (c.photoUrl) totalPhotos++;
       if (c.attendances) {
         totalSlots += c.attendances.length;
-        c.attendances.forEach(a => {
-          if (a.present) totalPresents++;
-          else totalAbsents++;
+        c.attendances.forEach(att => {
+          if (att.present) totalPresents++;
         });
-      }
-      if (c.photoStatus === 'RECEIVED' || c.photoStatus === 'READY_TO_SEND') {
-        totalPhotos++;
-      } else {
-        pendingPhotos++;
       }
     });
 
+    const totalAbsents = totalSlots - totalPresents;
     const rate = totalSlots > 0 ? Math.round((totalPresents / totalSlots) * 100) : 0;
-    const photoRate = totalClasses > 0 ? Math.round((totalPhotos / totalClasses) * 100) : 0;
+    const photoRate = list.length > 0 ? Math.round((totalPhotos / list.length) * 100) : 0;
 
     return {
-      classes,
-      totalClasses,
-      totalSlots,
+      totalClasses: list.length,
       totalPresents,
       totalAbsents,
-      totalPhotos,
-      pendingPhotos,
+      totalSlots,
       rate,
-      photoRate
+      totalPhotos,
+      photoRate,
+      pendingPhotos: list.length - totalPhotos,
+      classes: list
     };
   }
 
   exportCSV(month, year) {
-    const m = Number(month);
-    const y = Number(year);
+    const user = this.getCurrentUser();
+    const metrics = this.getMonthlyMetrics(month, year);
+    const professors = this.getProfessors();
+    const arena = user?.arenaId ? this.getArenaById(user.arenaId) : null;
+    const arenaTitle = arena ? arena.name : 'Todas as Arenas';
 
-    const classes = this.getClasses().filter(c => {
-      const d = new Date(c.date + 'T00:00:00');
-      return (d.getMonth() + 1) === m && d.getFullYear() === y;
-    }).sort((a, b) => new Date(a.date) - new Date(b.date));
+    let csvContent = 'data:text/csv;charset=utf-8,\uFEFF';
+    csvContent += `RELATORIO CONSOLIDADO DE AULAS DE VOLEI DE PRAIA - ${arenaTitle.toUpperCase()}\n`;
+    csvContent += `Mes de Referencia:;${month}/${year}\n`;
+    csvContent += `Data de Emissao:;${new Date().toLocaleDateString('pt-BR')}\n\n`;
 
-    // Cabeçalhos em PT-BR com separador ';' e UTF-8 BOM
-    let csv = '\ufeffID da Aula;Data;Horário;Arena;Professor;Turma;Total de Alunos;Presentes;Ausentes;Taxa de Presença (%);Status da Foto;Observações\r\n';
+    csvContent += 'DESEMPENHO DOS PROFESSORES\n';
+    csvContent += 'Professor;Login;Aulas Dadas;Presencas Totais;Faltas;Taxa de Frequencia (%);Fotos Entregues\n';
 
-    classes.forEach(c => {
-      const arena = this.getArenaById(c.arenaId)?.name || '-';
-      const prof = this.getProfessorById(c.professorId)?.name || '-';
-      const total = c.attendances?.length || 0;
-      const presents = c.attendances ? c.attendances.filter(a => a.present).length : 0;
-      const absents = total - presents;
-      const rate = total > 0 ? Math.round((presents / total) * 100) : 0;
-
-      let statusLabel = 'FOTO PENDENTE';
-      if (c.photoStatus === 'READY_TO_SEND') statusLabel = 'PREPARADO PARA ENVIO';
-      else if (c.photoStatus === 'RECEIVED') statusLabel = 'FOTO RECEBIDA';
-
-      const dateParts = c.date.split('-');
-      const formattedDate = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : c.date;
-
-      const row = [
-        c.id,
-        formattedDate,
-        c.time || '',
-        `"${arena}"`,
-        `"${prof}"`,
-        `"${c.groupName}"`,
-        total,
-        presents,
-        absents,
-        `${rate}%`,
-        statusLabel,
-        `"${(c.observations || '').replace(/"/g, '""')}"`
-      ];
-
-      csv += row.join(';') + '\r\n';
+    professors.forEach(p => {
+      const stats = this.getMonthlyMetrics(month, year, p.id);
+      csvContent += `"${p.name}";"${p.email}";${stats.totalClasses};${stats.totalPresents};${stats.totalAbsents};${stats.rate}%;${stats.totalPhotos}/${stats.totalClasses}\n`;
     });
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    csvContent += '\nDETALHAMENTO DE TODAS AS AULAS\n';
+    csvContent += 'Data;Horario;Arena;Turma;Professor;Alunos Presentes;Total Alunos;Frequencia (%);Status Foto\n';
+
+    metrics.classes.forEach(c => {
+      const p = this.getProfessorById(c.professorId);
+      const a = this.getArenaById(c.arenaId);
+      const total = c.attendances?.length || 0;
+      const presents = c.attendances ? c.attendances.filter(att => att.present).length : 0;
+      const rate = total > 0 ? Math.round((presents / total) * 100) : 0;
+      csvContent += `"${c.date}";"${c.time}";"${a ? a.name : ''}";"${c.groupName}";"${p ? p.name : ''}";${presents};${total};${rate}%;"${c.photoStatus}"\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `relatorio_aulas_${String(m).padStart(2, '0')}_${y}.csv`);
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `relatorio_volei_${arenaTitle.replace(/\s+/g, '_').toLowerCase()}_${month}_${year}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   }
-
-  resetToDefaults() {
-    localStorage.removeItem(this.STORAGE_KEY);
-    this.state = getDefaultData();
-    this.save();
-  }
 }
 
-// Instância global do banco de dados
 window.store = new Store();

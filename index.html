@@ -38,6 +38,12 @@
     <section id="loginView" class="view-section"></section>
     <section id="registerView" class="view-section"></section>
     
+    <!-- ÁREA GLOBAL DO DESENVOLVEDOR / MASTER DEV (@dev.com) -->
+    <section id="superAdminDashboardView" class="view-section"></section>
+    
+    <!-- LANDING PAGE DINÂMICA PÚBLICA DA ARENA -->
+    <section id="arenaLandingView" class="view-section"></section>
+    
     <!-- ÁREA DO PROFESSOR -->
     <section id="professorDashboardView" class="view-section"></section>
     <section id="quickClassView" class="view-section"></section>
@@ -314,6 +320,80 @@
           </button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NOVO GESTOR DE ARENA (DEV / MASTER) -->
+  <div class="modal-backdrop" id="newManagerModal">
+    <div class="modal-card">
+      <div class="modal-header-custom" style="padding-bottom: 0;">
+        <h2 class="modal-title-custom" style="color: var(--primary-deep);">🛡️ Cadastrar Gestor de Arena</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">
+          Geração automática de credenciais @adm.com para o gestor responsável.
+        </p>
+      </div>
+      <form onsubmit="App.handleCreateManager(event)">
+        <div style="padding: 1.25rem 1.5rem;">
+          <div class="form-group">
+            <label class="form-label">Nome Completo do Gestor *</label>
+            <input type="text" id="new_mgr_name" class="form-control" placeholder="Ex: Marcos Gestor" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Arena Responsável *</label>
+            <select id="new_mgr_arena" class="form-select" required>
+              <option value="1">Arena Ilha</option>
+              <option value="2">Arena Maroka</option>
+              <option value="3">Arena Ipanema Beach</option>
+              <option value="4">Arena Copacabana Sun</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Telefone / WhatsApp do Gestor</label>
+            <input type="tel" id="new_mgr_phone" class="form-control" placeholder="(21) 9 8888-0000">
+          </div>
+        </div>
+        <div class="modal-footer-custom two-buttons">
+          <button type="button" class="btn btn-secondary" style="flex: 1;" data-close-modal>Cancelar</button>
+          <button type="submit" class="btn btn-sand" style="flex: 1.2;">Salvar e Criar Gestor</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIGURAR LANDING PAGE DA ARENA (DEV) -->
+  <div class="modal-backdrop" id="editArenaConfigModal">
+    <div class="modal-card" style="max-width: 540px;">
+      <div class="modal-header-custom" style="padding-bottom: 0;">
+        <h2 class="modal-title-custom" style="color: var(--primary-deep);">⚙️ Configurar Landing Page</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">
+          Customização do site público de: <strong id="cfg_arena_name_label" style="color: var(--primary-ocean);">Arena</strong>
+        </p>
+      </div>
+      <form onsubmit="App.handleSaveTenantConfig(event)">
+        <input type="hidden" id="cfg_arena_id">
+        <div style="padding: 1.25rem 1.5rem;">
+          <div class="form-group">
+            <label class="form-label">Slug / URL da Arena *</label>
+            <input type="text" id="cfg_arena_slug" class="form-control" placeholder="ex: ilha (rota: #/arena/ilha)" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Frase de Destaque (Tagline) *</label>
+            <input type="text" id="cfg_arena_tagline" class="form-control" placeholder="Ex: O melhor centro de treinamento de areia" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">WhatsApp para Agendamento / Contato</label>
+            <input type="tel" id="cfg_arena_whatsapp" class="form-control" placeholder="(21) 9 9999-9999">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Instagram Oficial</label>
+            <input type="text" id="cfg_arena_instagram" class="form-control" placeholder="@arena.oficial">
+          </div>
+        </div>
+        <div class="modal-footer-custom two-buttons">
+          <button type="button" class="btn btn-secondary" style="flex: 1;" data-close-modal>Cancelar</button>
+          <button type="submit" class="btn btn-sand" style="flex: 1.2;">Salvar Configurações</button>
+        </div>
+      </form>
     </div>
   </div>
 
