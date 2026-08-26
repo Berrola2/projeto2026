@@ -6,7 +6,7 @@ from datetime import datetime, date, time
 from calendar import monthrange
 from flask import (
     Flask, render_template, request, redirect, url_for,
-    flash, session, jsonify, abort, send_file, g
+    flash, session, jsonify, abort, send_file, send_from_directory, g
 )
 from werkzeug.utils import secure_filename
 from sqlalchemy import func, extract
@@ -20,15 +20,21 @@ from auth import (
 )
 from seed_data import seed_database
 
-def create_app():
+def create_app(config_class=Config, testing=False):
     app = Flask(__name__)
-    app.config.from_object(Config)
+    app.config.from_object(config_class)
+    if testing:
+        app.config['TESTING'] = True
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
 
     # Inicializa banco de dados
     db.init_app(app)
 
     # Garante diretórios
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    try:
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    except Exception:
+        pass
 
     # Cria tabelas e popula o banco de dados automaticamente se estiver vazio
     with app.app_context():
@@ -38,6 +44,7 @@ def create_app():
                 seed_database(app)
             except Exception as e:
                 print(f"Aviso ao popular banco: {e}")
+
 
 
     # ----------------------------------------------------
@@ -86,6 +93,24 @@ def create_app():
             return meses[int(month_num)]
         except Exception:
             return str(month_num)
+
+    # ----------------------------------------------------
+    # SERVIÇO DE FOTOS E UPLOADS (SUPORTE VERCEL / LOCAL)
+    # ----------------------------------------------------
+    @app.route('/static/uploads/photos/<filename>')
+    @app.route('/uploads/photos/<filename>')
+    def serve_class_photo(filename):
+        # Tenta no diretório de upload configurado (ex: /tmp na Vercel)
+        upload_folder = app.config.get('UPLOAD_FOLDER')
+        if upload_folder and os.path.exists(os.path.join(upload_folder, filename)):
+            return send_from_directory(upload_folder, filename)
+        
+        # Fallback para o diretório static do projeto
+        static_folder = os.path.join(Config.BASE_DIR, 'static', 'uploads', 'photos')
+        if os.path.exists(os.path.join(static_folder, filename)):
+            return send_from_directory(static_folder, filename)
+            
+        return abort(404)
 
     # ----------------------------------------------------
     # ROTAS GERAIS E AUTENTICAÇÃO

@@ -5,12 +5,7 @@ from auth import validate_email_domain
 
 @pytest.fixture
 def app():
-    app = create_app()
-    app.config.update({
-        'TESTING': True,
-        'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
-        'WTF_CSRF_ENABLED': False
-    })
+    app = create_app(testing=True)
     
     with app.app_context():
         db.create_all()

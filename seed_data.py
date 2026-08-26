@@ -4,44 +4,48 @@ from werkzeug.security import generate_password_hash
 from PIL import Image, ImageDraw, ImageFont
 from models import db, User, Arena, Student, ClassSession, Attendance, ClassPhoto
 
-def create_sample_photo(filename: str, text: str, bg_color: tuple, accent_color: tuple):
+def create_sample_photo(filename: str, text: str, bg_color: tuple, accent_color: tuple, upload_dir: str = None):
     """Cria uma imagem de exemplo representativa de foto de aula de vôlei."""
-    upload_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'uploads', 'photos')
-    os.makedirs(upload_dir, exist_ok=True)
-    filepath = os.path.join(upload_dir, filename)
+    if not upload_dir:
+        upload_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'uploads', 'photos')
     
-    if os.path.exists(filepath):
-        return filename
-    
-    # Criar imagem estilosa
-    width, height = 800, 600
-    image = Image.new('RGB', (width, height), color=bg_color)
-    draw = ImageDraw.Draw(image)
-    
-    # Desenhar sol / círculo estilizado
-    draw.ellipse((width - 250, -50, width + 150, 350), fill=accent_color)
-    
-    # Desenhar faixa de areia
-    draw.polygon([(0, 480), (width, 420), (width, height), (0, height)], fill=(234, 179, 8) if bg_color != (234, 179, 8) else (217, 119, 6))
-    
-    # Desenhar rede estilizada de vôlei
-    draw.line([(0, 380), (width, 380)], fill=(255, 255, 255), width=4)
-    for x in range(0, width, 25):
-        draw.line([(x, 380), (x, 430)], fill=(255, 255, 255), width=2)
-    draw.line([(0, 430), (width, 430)], fill=(255, 255, 255), width=3)
-    
-    # Textos na imagem
     try:
-        # Tenta fonte padrão ou default
-        font_large = ImageFont.load_default()
-    except Exception:
-        font_large = None
+        os.makedirs(upload_dir, exist_ok=True)
+        filepath = os.path.join(upload_dir, filename)
         
-    draw.text((40, 60), "🏐 VÔLEI DE PRAIA - REGISTRO DE AULA", fill=(255, 255, 255))
-    draw.text((40, 100), text, fill=(255, 255, 255))
-    draw.text((40, 530), "Foto oficial registrada no sistema de gestão de aulas", fill=(15, 23, 42))
-    
-    image.save(filepath, 'JPEG', quality=85)
+        if os.path.exists(filepath):
+            return filename
+        
+        # Criar imagem estilosa
+        width, height = 800, 600
+        image = Image.new('RGB', (width, height), color=bg_color)
+        draw = ImageDraw.Draw(image)
+        
+        # Desenhar sol / círculo estilizado
+        draw.ellipse((width - 250, -50, width + 150, 350), fill=accent_color)
+        
+        # Desenhar faixa de areia
+        draw.polygon([(0, 480), (width, 420), (width, height), (0, height)], fill=(234, 179, 8) if bg_color != (234, 179, 8) else (217, 119, 6))
+        
+        # Desenhar rede estilizada de vôlei
+        draw.line([(0, 380), (width, 380)], fill=(255, 255, 255), width=4)
+        for x in range(0, width, 25):
+            draw.line([(x, 380), (x, 430)], fill=(255, 255, 255), width=2)
+        draw.line([(0, 430), (width, 430)], fill=(255, 255, 255), width=3)
+        
+        # Textos na imagem
+        try:
+            font_large = ImageFont.load_default()
+        except Exception:
+            font_large = None
+            
+        draw.text((40, 60), "🏐 VÔLEI DE PRAIA - REGISTRO DE AULA", fill=(255, 255, 255))
+        draw.text((40, 100), text, fill=(255, 255, 255))
+        draw.text((40, 530), "Foto oficial registrada no sistema de gestão de aulas", fill=(15, 23, 42))
+        
+        image.save(filepath, 'JPEG', quality=85)
+    except Exception as e:
+        print(f"Aviso ao gerar foto de amostra: {e}")
     return filename
 
 
@@ -50,9 +54,12 @@ def seed_database(app):
         # Cria todas as tabelas
         db.create_all()
 
-        # Cria diretório de uploads
-        upload_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'uploads', 'photos')
-        os.makedirs(upload_dir, exist_ok=True)
+        # Cria diretório de uploads configurado
+        upload_dir = app.config.get('UPLOAD_FOLDER', os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'uploads', 'photos'))
+        try:
+            os.makedirs(upload_dir, exist_ok=True)
+        except Exception:
+            pass
 
         # Se já existirem usuários, pula o seed
         if User.query.first():
@@ -153,19 +160,22 @@ def seed_database(app):
             "aula_ipanema_01.jpg",
             "Arena Ipanema Beach - Turma Iniciante Manhã",
             (15, 43, 72),
-            (2, 132, 199)
+            (2, 132, 199),
+            upload_dir=upload_dir
         )
         photo2_file = create_sample_photo(
             "aula_copacabana_01.jpg",
             "Arena Copacabana Sun - Turma Intermediário Noite",
             (30, 58, 138),
-            (249, 115, 22)
+            (249, 115, 22),
+            upload_dir=upload_dir
         )
         photo3_file = create_sample_photo(
             "aula_barra_01.jpg",
             "Arena Barra Sunset - Turma Avançado Tarde",
             (14, 116, 144),
-            (234, 179, 8)
+            (234, 179, 8),
+            upload_dir=upload_dir
         )
 
         today = date.today()
