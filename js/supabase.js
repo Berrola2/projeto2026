@@ -5,10 +5,10 @@
  * ==========================================================================
  */
 
-// Configuração Central do Supabase
+// Credenciais Oficiais do Supabase
 const SUPABASE_CONFIG = {
-  url: localStorage.getItem('VOLEI_SUPABASE_URL') || '',
-  anonKey: localStorage.getItem('VOLEI_SUPABASE_KEY') || ''
+  url: 'https://wwxlfucpllxdpzmrrhfa.supabase.co',
+  anonKey: 'sb_publishable_yROxATTExwYaBlSnFydLYg_QKTWXfg6'
 };
 
 const SupabaseSync = {
@@ -28,19 +28,19 @@ const SupabaseSync = {
     try {
       this.client = window.supabase.createClient(url, key);
       
-      // Sincroniza dados iniciais
+      // Sincroniza dados iniciais da nuvem
       await this.pullFromCloud();
       this.isOnline = true;
       this.setupRealtimeListener();
 
-      // Sincronização periódica em background a cada 10 segundos
+      // Sincronização periódica em background a cada 6 segundos
       if (this.syncInterval) clearInterval(this.syncInterval);
-      this.syncInterval = setInterval(() => this.pullFromCloud(), 10000);
+      this.syncInterval = setInterval(() => this.pullFromCloud(), 6000);
 
       console.log('☁️ Supabase conectado e sincronizando em tempo real.');
       return true;
     } catch (err) {
-      console.warn('Falha na sincronização do Supabase:', err);
+      console.warn('Sincronização Supabase em espera:', err);
       this.isOnline = false;
       return false;
     }
@@ -56,11 +56,16 @@ const SupabaseSync = {
         .eq('id', 'global_db')
         .maybeSingle();
 
+      if (error) {
+        // Se a tabela ainda não foi criada no Supabase SQL editor
+        return;
+      }
+
       if (data && data.data) {
         const cloudState = data.data;
         const localCurrentUser = window.store.getCurrentUser();
         
-        // Atualiza o estado preservando a sessão local do usuário
+        // Atualiza o estado local preservando a sessão atual do usuário
         window.store.state = {
           ...cloudState,
           currentUser: localCurrentUser
@@ -69,7 +74,7 @@ const SupabaseSync = {
         window.store.notify();
       }
     } catch (e) {
-      console.error('Erro no pull do Supabase:', e);
+      // Falha silenciosa
     }
   },
 
@@ -84,7 +89,7 @@ const SupabaseSync = {
         classes: window.store.state.classes
       };
 
-      await this.client
+      const { error } = await this.client
         .from('app_state')
         .upsert({
           id: 'global_db',
@@ -92,9 +97,11 @@ const SupabaseSync = {
           updated_at: new Date().toISOString()
         });
 
-      console.log('☁️ Alteração sincronizada com o Supabase.');
+      if (!error) {
+        console.log('☁️ Alteração sincronizada com o Supabase com sucesso.');
+      }
     } catch (e) {
-      console.error('Erro no push do Supabase:', e);
+      console.warn('Erro ao enviar dados para o Supabase:', e);
     }
   },
 
@@ -109,7 +116,7 @@ const SupabaseSync = {
         })
         .subscribe();
     } catch (e) {
-      console.warn('Realtime listener subscription error:', e);
+      console.warn('Realtime listener subscription:', e);
     }
   }
 };
