@@ -2,14 +2,42 @@
  * ==========================================================================
  * SISTEMA DE GESTÃO DE AULAS DE VÔLEI DE PRAIA
  * Gerenciador de Estado e Banco de Dados Local (localStorage)
- * RBAC por Domínio de E-mail (@prof.com e @arenaadm.com)
+ * Geração Automática de E-mail: (nome).(arena)@(funcao).com
+ * Isolamento Multitenant por Arena (Segurança Estrita para Venda SaaS)
  * ==========================================================================
  */
 
 const ALLOWED_DOMAINS = {
   'prof.com': 'PROFESSOR',
+  'adm.com': 'ADMIN',
   'arenaadm.com': 'ADMIN'
 };
+
+// Remove acentos, pontuações e espaços para gerar slugs limpos
+function sanitizeSlug(text) {
+  if (!text) return '';
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // remove acentos
+    .replace(/[^a-zA-Z0-9]/g, '')     // remove caracteres especiais
+    .toLowerCase();
+}
+
+// Gera e-mail no formato oficial: (primeiro_nome).(arena)@(funcao).com
+function generateAutomaticEmail(name, arenaName, role) {
+  if (!name || !arenaName) return '';
+  
+  const firstName = sanitizeSlug(name.trim().split(' ')[0]);
+  
+  // Limpa prefixos comuns de arena como "Arena ", "Praia ", etc.
+  let cleanArena = arenaName.replace(/^Arena\s+/i, '').replace(/^Praia\s+/i, '').trim();
+  cleanArena = sanitizeSlug(cleanArena.split(' ')[0]);
+
+  const domain = (role === 'PROFESSOR') ? 'prof.com' : 'adm.com';
+  
+  if (!firstName || !cleanArena) return '';
+  return `${firstName}.${cleanArena}@${domain}`;
+}
 
 // Fotos de amostra em SVG DataURL elegantes para exibição imediata
 function generateSamplePhotoSvg(title, arenaName, bgColor, accentColor) {
@@ -43,121 +71,124 @@ function generateSamplePhotoSvg(title, arenaName, bgColor, accentColor) {
   return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
 }
 
-// Dados Iniciais de Fábrica
+// Dados Iniciais de Fábrica Multitenant
 function getDefaultData() {
   const today = new Date().toISOString().split('T')[0];
   const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 
-  const samplePhoto1 = generateSamplePhotoSvg('Turma Iniciante Manhã', 'Arena Ipanema Beach', '#0f2b48', '#fbbf24');
-  const samplePhoto2 = generateSamplePhotoSvg('Turma Intermediário Noite', 'Arena Copacabana Sun', '#1e3a8a', '#f97316');
-  const samplePhoto3 = generateSamplePhotoSvg('Turma Avançado Tarde', 'Arena Barra Sunset', '#0e7490', '#f59e0b');
+  const photoIlha = generateSamplePhotoSvg('Turma Iniciante Manhã', 'Arena Ilha', '#0f2b48', '#fbbf24');
+  const photoMaroka = generateSamplePhotoSvg('Turma Intermediário Noite', 'Arena Maroka', '#1e3a8a', '#f97316');
+  const photoIpanema = generateSamplePhotoSvg('Turma Avançado Tarde', 'Arena Ipanema Beach', '#0e7490', '#f59e0b');
 
   return {
     currentUser: null,
-    users: [
-      { id: 1, name: 'Roberto Gestor', email: 'gestor@arenaadm.com', role: 'ADMIN', phone: '(21) 98888-0001' },
-      { id: 2, name: 'Administrador da Arena', email: 'admin@arenaadm.com', role: 'ADMIN', phone: '(21) 98888-0000' },
-      { id: 3, name: 'Carlos Silva', email: 'carlos@prof.com', role: 'PROFESSOR', phone: '(21) 97777-1001' },
-      { id: 4, name: 'Ana Souza', email: 'ana@prof.com', role: 'PROFESSOR', phone: '(21) 97777-2002' }
-    ],
     arenas: [
-      { id: 1, name: 'Arena Ipanema Beach', location: 'Av. Vieira Souto, Posto 9 - Ipanema, Rio de Janeiro - RJ' },
-      { id: 2, name: 'Arena Copacabana Sun', location: 'Av. Atlântica, Posto 4 - Copacabana, Rio de Janeiro - RJ' },
-      { id: 3, name: 'Arena Barra Sunset', location: 'Av. Lúcio Costa, Posto 6 - Barra da Tijuca, Rio de Janeiro - RJ' }
+      { id: 1, name: 'Arena Ilha', location: 'Praia da Bica, Ilha do Governador - Rio de Janeiro, RJ' },
+      { id: 2, name: 'Arena Maroka', location: 'Av. Maroka Beach, Posto 2 - Niterói, RJ' },
+      { id: 3, name: 'Arena Ipanema Beach', location: 'Av. Vieira Souto, Posto 9 - Ipanema, Rio de Janeiro, RJ' },
+      { id: 4, name: 'Arena Copacabana Sun', location: 'Av. Atlântica, Posto 4 - Copacabana, Rio de Janeiro, RJ' }
+    ],
+    users: [
+      // ARENA ILHA (Isolamento 1)
+      { id: 1, name: 'Heitor Augusto', email: 'heitor.ilha@adm.com', role: 'ADMIN', arenaId: 1, phone: '(21) 98888-0001' },
+      { id: 2, name: 'Felipe Gabriel', email: 'felipe.ilha@prof.com', role: 'PROFESSOR', arenaId: 1, phone: '(21) 97777-1001' },
+      
+      // ARENA MAROKA (Isolamento 2)
+      { id: 3, name: 'Marcos Gestor', email: 'marcos.maroka@adm.com', role: 'ADMIN', arenaId: 2, phone: '(21) 98888-0002' },
+      { id: 4, name: 'Lucas Treinador', email: 'lucas.maroka@prof.com', role: 'PROFESSOR', arenaId: 2, phone: '(21) 97777-2002' },
+
+      // OUTRAS ARENAS
+      { id: 5, name: 'Carlos Silva', email: 'carlos.ipanema@prof.com', role: 'PROFESSOR', arenaId: 3, phone: '(21) 97777-3003' },
+      { id: 6, name: 'Ana Souza', email: 'ana.copacabana@prof.com', role: 'PROFESSOR', arenaId: 4, phone: '(21) 97777-4004' }
     ],
     students: [
-      // Arena 1 - Ipanema
+      // Alunos Arena Ilha (ID: 1)
       { id: 1, name: 'Gabriel Martins', phone: '(21) 99111-2233', email: 'gabriel@email.com', arenaId: 1, groupName: 'Iniciante Manhã' },
       { id: 2, name: 'Beatriz Lima', phone: '(21) 99222-3344', email: 'beatriz@email.com', arenaId: 1, groupName: 'Iniciante Manhã' },
       { id: 3, name: 'Lucas Oliveira', phone: '(21) 99333-4455', email: 'lucas@email.com', arenaId: 1, groupName: 'Iniciante Manhã' },
       { id: 4, name: 'Mariana Costa', phone: '(21) 99444-5566', email: 'mariana@email.com', arenaId: 1, groupName: 'Iniciante Manhã' },
       { id: 5, name: 'Felipe Santos', phone: '(21) 99555-6677', email: 'felipe@email.com', arenaId: 1, groupName: 'Intermediário Noite' },
       { id: 6, name: 'Camila Rocha', phone: '(21) 99666-7788', email: 'camila@email.com', arenaId: 1, groupName: 'Intermediário Noite' },
-      { id: 7, name: 'Thiago Mendes', phone: '(21) 99777-8899', email: 'thiago@email.com', arenaId: 1, groupName: 'Intermediário Noite' },
-      { id: 8, name: 'Juliana Paiva', phone: '(21) 99888-9900', email: 'juliana@email.com', arenaId: 1, groupName: 'Intermediário Noite' },
-      { id: 9, name: 'Rafael Moreira', phone: '(21) 99123-4567', email: 'rafael@email.com', arenaId: 1, groupName: 'Avançado Tarde' },
-      { id: 10, name: 'Larissa Duarte', phone: '(21) 99234-5678', email: 'larissa@email.com', arenaId: 1, groupName: 'Avançado Tarde' },
-      // Arena 2 - Copacabana
-      { id: 11, name: 'Rodrigo Alves', phone: '(21) 99345-6789', email: 'rodrigo@email.com', arenaId: 2, groupName: 'Iniciante Manhã' },
-      { id: 12, name: 'Fernanda Gomes', phone: '(21) 99456-7890', email: 'fernanda@email.com', arenaId: 2, groupName: 'Iniciante Manhã' },
-      { id: 13, name: 'Marcelo Dias', phone: '(21) 99567-8901', email: 'marcelo@email.com', arenaId: 2, groupName: 'Intermediário Noite' },
-      { id: 14, name: 'Patricia Ramos', phone: '(21) 99678-9012', email: 'patricia@email.com', arenaId: 2, groupName: 'Intermediário Noite' },
-      { id: 15, name: 'Diego Carvalho', phone: '(21) 99789-0123', email: 'diego@email.com', arenaId: 2, groupName: 'Avançado Tarde' },
-      // Arena 3 - Barra
-      { id: 16, name: 'Vinicius Barbosa', phone: '(21) 99890-1234', email: 'vinicius@email.com', arenaId: 3, groupName: 'Iniciante Manhã' },
-      { id: 17, name: 'Aline Guimarães', phone: '(21) 99901-2345', email: 'aline@email.com', arenaId: 3, groupName: 'Iniciante Manhã' },
-      { id: 18, name: 'Eduardo Ferreira', phone: '(21) 99012-3456', email: 'eduardo@email.com', arenaId: 3, groupName: 'Intermediário Noite' },
-      { id: 19, name: 'Tatiana Ribeiro', phone: '(21) 99124-5678', email: 'tatiana@email.com', arenaId: 3, groupName: 'Intermediário Noite' }
+
+      // Alunos Arena Maroka (ID: 2)
+      { id: 7, name: 'Rodrigo Alves', phone: '(21) 99345-6789', email: 'rodrigo@email.com', arenaId: 2, groupName: 'Iniciante Manhã' },
+      { id: 8, name: 'Fernanda Gomes', phone: '(21) 99456-7890', email: 'fernanda@email.com', arenaId: 2, groupName: 'Iniciante Manhã' },
+      { id: 9, name: 'Marcelo Dias', phone: '(21) 99567-8901', email: 'marcelo@email.com', arenaId: 2, groupName: 'Intermediário Noite' },
+      { id: 10, name: 'Patricia Ramos', phone: '(21) 99678-9012', email: 'patricia@email.com', arenaId: 2, groupName: 'Intermediário Noite' },
+
+      // Alunos Arena Ipanema (ID: 3)
+      { id: 11, name: 'Thiago Mendes', phone: '(21) 99777-8899', email: 'thiago@email.com', arenaId: 3, groupName: 'Avançado Tarde' },
+      { id: 12, name: 'Juliana Paiva', phone: '(21) 99888-9900', email: 'juliana@email.com', arenaId: 3, groupName: 'Avançado Tarde' },
+
+      // Alunos Arena Copacabana (ID: 4)
+      { id: 13, name: 'Vinicius Barbosa', phone: '(21) 99890-1234', email: 'vinicius@email.com', arenaId: 4, groupName: 'Iniciante Manhã' },
+      { id: 14, name: 'Aline Guimarães', phone: '(21) 99901-2345', email: 'aline@email.com', arenaId: 4, groupName: 'Iniciante Manhã' }
     ],
     classes: [
-      // Aula 1: Carlos - Ipanema - Hoje de manhã - Enviada WhatsApp
+      // Aula 1: Prof. Felipe na Arena Ilha (ID: 1) - Enviada WhatsApp
       {
         id: 1,
-        professorId: 3,
+        professorId: 2,
         arenaId: 1,
         date: today,
         time: '07:30',
         groupName: 'Iniciante Manhã',
-        observations: 'Treino de manchete e saque por baixo. Excelente aproveitamento dos alunos.',
-        photoStatus: 'READY_TO_SEND', // 'PENDING', 'RECEIVED', 'READY_TO_SEND'
-        photoUrl: samplePhoto1,
+        observations: 'Treino de saque e recepção na Arena Ilha.',
+        photoStatus: 'READY_TO_SEND',
+        photoUrl: photoIlha,
         attendances: [
           { studentId: 1, present: true },
           { studentId: 2, present: true },
-          { studentId: 3, present: false },
-          { studentId: 4, present: true }
+          { studentId: 3, present: true },
+          { studentId: 4, present: false }
         ]
       },
-      // Aula 2: Carlos - Ipanema - Hoje à tarde - Foto Recebida
+      // Aula 2: Prof. Felipe na Arena Ilha (ID: 1) - Ontem
       {
         id: 2,
-        professorId: 3,
-        arenaId: 1,
-        date: today,
-        time: '16:00',
-        groupName: 'Avançado Tarde',
-        observations: 'Treino tático de bloqueio e contra-ataque em duplas.',
-        photoStatus: 'RECEIVED',
-        photoUrl: samplePhoto3,
-        attendances: [
-          { studentId: 9, present: true },
-          { studentId: 10, present: true }
-        ]
-      },
-      // Aula 3: Carlos - Ipanema - Ontem - Sem Foto (PENDENTE)
-      {
-        id: 3,
-        professorId: 3,
+        professorId: 2,
         arenaId: 1,
         date: yesterday,
         time: '18:30',
         groupName: 'Intermediário Noite',
-        observations: 'Fundamentos de levantamento e ataque na diagonal.',
-        photoStatus: 'PENDING',
-        photoUrl: null,
+        observations: 'Táticas de bloqueio e levantamento.',
+        photoStatus: 'RECEIVED',
+        photoUrl: photoIlha,
         attendances: [
           { studentId: 5, present: true },
-          { studentId: 6, present: true },
-          { studentId: 7, present: true },
-          { studentId: 8, present: true }
+          { studentId: 6, present: true }
         ]
       },
-      // Aula 4: Ana - Copacabana - Hoje - Enviada WhatsApp
+      // Aula 3: Prof. Lucas na Arena Maroka (ID: 2) - Exclusivo da Maroka!
       {
-        id: 4,
+        id: 3,
         professorId: 4,
         arenaId: 2,
         date: today,
         time: '08:00',
-        groupName: 'Intermediário Noite',
-        observations: 'Simulação de jogo e posicionamento defensivo sob vento lateral.',
+        groupName: 'Iniciante Manhã',
+        observations: 'Aula inaugural na Arena Maroka.',
         photoStatus: 'READY_TO_SEND',
-        photoUrl: samplePhoto2,
+        photoUrl: photoMaroka,
+        attendances: [
+          { studentId: 7, present: true },
+          { studentId: 8, present: true }
+        ]
+      },
+      // Aula 4: Prof. Carlos na Arena Ipanema (ID: 3)
+      {
+        id: 4,
+        professorId: 5,
+        arenaId: 3,
+        date: today,
+        time: '16:00',
+        groupName: 'Avançado Tarde',
+        observations: 'Treino avançado sob vento.',
+        photoStatus: 'RECEIVED',
+        photoUrl: photoIpanema,
         attendances: [
           { studentId: 11, present: true },
-          { studentId: 12, present: true },
-          { studentId: 13, present: true },
-          { studentId: 14, present: true }
+          { studentId: 12, present: true }
         ]
       }
     ]
@@ -166,7 +197,7 @@ function getDefaultData() {
 
 class Store {
   constructor() {
-    this.STORAGE_KEY = 'VOLEI_PRAIA_DB_v2';
+    this.STORAGE_KEY = 'VOLEI_PRAIA_DB_v3';
     this.listeners = [];
     this.state = this.load();
   }
@@ -207,8 +238,12 @@ class Store {
   }
 
   // ----------------------------------------------------
-  // AUTENTICAÇÃO E REGRAS DE DOMÍNIO RBAC
+  // GERAÇÃO E VALIDAÇÃO DE E-MAIL AUTOMÁTICO
   // ----------------------------------------------------
+  generateEmail(name, arenaName, role) {
+    return generateAutomaticEmail(name, arenaName, role);
+  }
+
   validateEmailDomain(email) {
     if (!email || !email.includes('@')) {
       return { valid: false, role: null, error: 'Este e-mail não possui permissão para acessar o sistema.' };
@@ -234,13 +269,14 @@ class Store {
 
     let user = this.state.users.find(u => u.email.toLowerCase() === cleanEmail);
 
-    // Se o usuário não existir no seed, mas possui domínio institucional autorizado, auto-cadastra
+    // Se o usuário não existir no seed, mas possui domínio institucional autorizado, auto-cadastra com arena padrão
     if (!user) {
       user = {
         id: Date.now(),
         name: cleanEmail.split('@')[0].replace('.', ' ').toUpperCase(),
         email: cleanEmail,
         role: validation.role,
+        arenaId: 1, // Padrão
         phone: ''
       };
       this.state.users.push(user);
@@ -251,7 +287,7 @@ class Store {
     return { success: true, user };
   }
 
-  register(name, email, phone, password, passwordConfirm) {
+  register(name, email, phone, arenaId, role, password, passwordConfirm) {
     const cleanEmail = (email || '').trim().toLowerCase();
     if (!name || !cleanEmail || !password) {
       return { success: false, error: 'Por favor, preencha todos os campos obrigatórios.' };
@@ -282,6 +318,7 @@ class Store {
       name: name.trim(),
       email: cleanEmail,
       role: validation.role,
+      arenaId: Number(arenaId) || 1,
       phone: (phone || '').trim()
     };
 
@@ -301,28 +338,46 @@ class Store {
   }
 
   // ----------------------------------------------------
-  // FLUXO DE AULAS & PRESENÇA
+  // ISOLAMENTO MULTITENANT POR ARENA (SEGURANÇA ESTRITA)
   // ----------------------------------------------------
+  getUserArenaId() {
+    const user = this.getCurrentUser();
+    return user ? user.arenaId : null;
+  }
+
+  getUserArena() {
+    const user = this.getCurrentUser();
+    if (!user || !user.arenaId) return null;
+    return this.getArenaById(user.arenaId);
+  }
+
+  // Retorna aulas respeitando estritamente o isolamento da Arena
   getClasses(filters = {}) {
+    const user = this.getCurrentUser();
     let list = [...this.state.classes];
 
-    // Isolamento de dados do professor
-    if (filters.professorId) {
-      list = list.filter(c => c.professorId === filters.professorId);
+    // Se for PROFESSOR: só vê as suas próprias aulas
+    if (user && user.role === 'PROFESSOR') {
+      list = list.filter(c => c.professorId === user.id);
+    } 
+    // Se for GESTOR/ADMIN DA ARENA: SÓ VÊ AULAS DA SUA ARENA!
+    else if (user && user.role === 'ADMIN' && user.arenaId) {
+      list = list.filter(c => c.arenaId === user.arenaId);
     }
 
+    // Filtros adicionais manuais
+    if (filters.professorId) {
+      list = list.filter(c => c.professorId === Number(filters.professorId));
+    }
     if (filters.arenaId) {
       list = list.filter(c => c.arenaId === Number(filters.arenaId));
     }
-
     if (filters.date) {
       list = list.filter(c => c.date === filters.date);
     }
-
     if (filters.groupName && filters.groupName !== 'TODAS') {
       list = list.filter(c => c.groupName === filters.groupName);
     }
-
     if (filters.photoStatus && filters.photoStatus !== 'TODOS') {
       list = list.filter(c => c.photoStatus === filters.photoStatus);
     }
@@ -338,16 +393,32 @@ class Store {
   }
 
   getClassById(id) {
-    return this.state.classes.find(c => c.id === Number(id));
+    const cls = this.state.classes.find(c => c.id === Number(id));
+    if (!cls) return null;
+
+    const user = this.getCurrentUser();
+    if (!user) return null;
+
+    // Regra de segurança: se professor, só vê se for dele
+    if (user.role === 'PROFESSOR' && cls.professorId !== user.id) {
+      return null;
+    }
+    // Regra de segurança: se gestor de arena, só vê se for da sua arena
+    if (user.role === 'ADMIN' && user.arenaId && cls.arenaId !== user.arenaId) {
+      return null;
+    }
+
+    return cls;
   }
 
   createClass(data) {
+    const user = this.getCurrentUser();
     const newId = this.state.classes.length > 0 ? Math.max(...this.state.classes.map(c => c.id)) + 1 : 1;
     
     const newClass = {
       id: newId,
-      professorId: data.professorId,
-      arenaId: Number(data.arenaId),
+      professorId: user ? user.id : data.professorId,
+      arenaId: Number(data.arenaId) || (user ? user.arenaId : 1),
       date: data.date,
       time: data.time,
       groupName: data.groupName,
@@ -363,7 +434,7 @@ class Store {
   }
 
   attachPhoto(classId, photoUrl) {
-    const cls = this.getClassById(classId);
+    const cls = this.state.classes.find(c => c.id === Number(classId));
     if (!cls) return null;
 
     cls.photoUrl = photoUrl;
@@ -373,7 +444,7 @@ class Store {
   }
 
   markWhatsAppSent(classId) {
-    const cls = this.getClassById(classId);
+    const cls = this.state.classes.find(c => c.id === Number(classId));
     if (!cls) return null;
 
     cls.photoStatus = 'READY_TO_SEND';
@@ -382,13 +453,19 @@ class Store {
   }
 
   // ----------------------------------------------------
-  // GESTÃO DE ALUNOS, ARENAS E PROFESSORES
+  // GESTÃO DE ALUNOS, ARENAS E PROFESSORES (COM ISOLAMENTO)
   // ----------------------------------------------------
   getStudents(arenaId = null, query = '') {
+    const user = this.getCurrentUser();
     let list = [...this.state.students];
-    if (arenaId) {
+
+    // Se o gestor logado tem arenaId fixo, isola apenas para sua arena
+    if (user && user.role === 'ADMIN' && user.arenaId) {
+      list = list.filter(s => s.arenaId === user.arenaId);
+    } else if (arenaId) {
       list = list.filter(s => s.arenaId === Number(arenaId));
     }
+
     if (query) {
       const q = query.toLowerCase();
       list = list.filter(s => s.name.toLowerCase().includes(q));
@@ -397,13 +474,16 @@ class Store {
   }
 
   addStudent(data) {
+    const user = this.getCurrentUser();
+    const targetArenaId = (user && user.role === 'ADMIN' && user.arenaId) ? user.arenaId : Number(data.arenaId || 1);
+    
     const newId = this.state.students.length > 0 ? Math.max(...this.state.students.map(s => s.id)) + 1 : 1;
     const newStudent = {
       id: newId,
       name: data.name,
       phone: data.phone || '',
       email: data.email || '',
-      arenaId: Number(data.arenaId),
+      arenaId: targetArenaId,
       groupName: data.groupName || 'Geral'
     };
     this.state.students.push(newStudent);
@@ -417,6 +497,17 @@ class Store {
   }
 
   getArenas() {
+    const user = this.getCurrentUser();
+    let list = [...this.state.arenas];
+    
+    // Se o gestor for específico de uma arena, destaca/isola
+    if (user && user.role === 'ADMIN' && user.arenaId) {
+      list = list.filter(a => a.id === user.arenaId);
+    }
+    return list.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  getAllArenasGlobal() {
     return [...this.state.arenas].sort((a, b) => a.name.localeCompare(b.name));
   }
 
@@ -437,7 +528,14 @@ class Store {
   }
 
   getProfessors() {
-    return this.state.users.filter(u => u.role === 'PROFESSOR').sort((a, b) => a.name.localeCompare(b.name));
+    const user = this.getCurrentUser();
+    let list = this.state.users.filter(u => u.role === 'PROFESSOR');
+
+    // Se o gestor for de uma arena específica, lista apenas professores da sua arena
+    if (user && user.role === 'ADMIN' && user.arenaId) {
+      list = list.filter(p => p.arenaId === user.arenaId);
+    }
+    return list.sort((a, b) => a.name.localeCompare(b.name));
   }
 
   getProfessorById(id) {
@@ -445,15 +543,28 @@ class Store {
   }
 
   addProfessor(data) {
-    const validation = this.validateEmailDomain(data.email);
-    if (!validation.valid || validation.role !== 'PROFESSOR') {
-      return { success: false, error: 'O e-mail do professor deve possuir domínio @prof.com.' };
+    const user = this.getCurrentUser();
+    const targetArenaId = (user && user.role === 'ADMIN' && user.arenaId) ? user.arenaId : Number(data.arenaId || 1);
+    const arenaObj = this.getArenaById(targetArenaId);
+    const arenaName = arenaObj ? arenaObj.name : 'Arena';
+
+    // Gera o e-mail automaticamente se não foi fornecido
+    let email = data.email;
+    if (!email) {
+      email = generateAutomaticEmail(data.name, arenaName, 'PROFESSOR');
     }
+
+    const validation = this.validateEmailDomain(email);
+    if (!validation.valid || validation.role !== 'PROFESSOR') {
+      return { success: false, error: 'O e-mail gerado do professor deve possuir domínio @prof.com.' };
+    }
+
     const newId = this.state.users.length > 0 ? Math.max(...this.state.users.map(u => u.id)) + 1 : 1;
     const newProf = {
       id: newId,
       name: data.name,
-      email: data.email.toLowerCase(),
+      email: email.toLowerCase(),
+      arenaId: targetArenaId,
       phone: data.phone || '',
       role: 'PROFESSOR'
     };
@@ -463,13 +574,14 @@ class Store {
   }
 
   // ----------------------------------------------------
-  // RELATÓRIOS E EXPORTAÇÃO CSV
+  // RELATÓRIOS E EXPORTAÇÃO CSV COM ISOLAMENTO DE ARENA
   // ----------------------------------------------------
   getMonthlyMetrics(month, year, professorId = null) {
     const m = Number(month);
     const y = Number(year);
+    const user = this.getCurrentUser();
 
-    let classes = this.state.classes.filter(c => {
+    let classes = this.getClasses().filter(c => {
       const d = new Date(c.date + 'T00:00:00');
       const matchMonth = (d.getMonth() + 1) === m && d.getFullYear() === y;
       if (!matchMonth) return false;
@@ -519,7 +631,7 @@ class Store {
     const m = Number(month);
     const y = Number(year);
 
-    const classes = this.state.classes.filter(c => {
+    const classes = this.getClasses().filter(c => {
       const d = new Date(c.date + 'T00:00:00');
       return (d.getMonth() + 1) === m && d.getFullYear() === y;
     }).sort((a, b) => new Date(a.date) - new Date(b.date));

@@ -2,6 +2,7 @@
  * ==========================================================================
  * SISTEMA DE GESTÃO DE AULAS DE VÔLEI DE PRAIA
  * Roteador de Telas (SPA), Navegação, Modais e Renderização
+ * Suporte a Geração Automática de E-mail e Isolamento por Arena
  * ==========================================================================
  */
 
@@ -9,10 +10,8 @@ const App = {
   currentRoute: '',
 
   init() {
-    // Escuta mudanças de hash na URL
     window.addEventListener('hashchange', () => this.handleRoute());
 
-    // Inicializa botões de fechar modal
     document.addEventListener('click', (e) => {
       if (e.target.matches('[data-close-modal]') || e.target.classList.contains('modal-backdrop')) {
         const modal = e.target.closest('.modal-backdrop');
@@ -20,7 +19,6 @@ const App = {
       }
     });
 
-    // Se o usuário não estiver logado e não tiver hash, vai para login
     if (!window.location.hash) {
       const user = window.store.getCurrentUser();
       if (!user) {
@@ -34,7 +32,6 @@ const App = {
       this.handleRoute();
     }
 
-    // Atualiza cabeçalho e navegação quando o estado mudar
     window.store.subscribe(() => {
       this.renderNav();
     });
@@ -117,7 +114,6 @@ const App = {
     } else if (hash === '#/calendario') {
       this.renderCalendar();
     } else {
-      // Rota não encontrada
       this.navigate(user.role === 'ADMIN' ? '#/admin' : '#/professor');
     }
   },
@@ -142,6 +138,9 @@ const App = {
       return;
     }
 
+    const arenaObj = window.store.getArenaById(user.arenaId);
+    const arenaName = arenaObj ? arenaObj.name : 'Vôlei de Praia';
+
     // 1. Navegação Desktop
     if (headerNav) {
       if (user.role === 'PROFESSOR') {
@@ -153,10 +152,11 @@ const App = {
             <span>⚡</span> Nova Aula
           </button>
           <button class="nav-link ${this.currentRoute === '#/fechamento' ? 'active' : ''}" onclick="App.navigate('#/fechamento')">
-            <span>📅</span> Fechamento do Mês
+            <span>📅</span> Fechamento
           </button>
           <div class="user-badge-header">
             <span>👤 ${user.name}</span>
+            <span style="font-size:0.75rem; color:#fde047; font-weight:700;">📍 ${arenaName}</span>
             <span class="role-pill role-pill-professor">Professor</span>
             <button onclick="App.handleLogout()" title="Sair" style="background:none; border:none; color:#cbd5e1; cursor:pointer; font-size:1.1rem; margin-left:0.35rem;">🚪</button>
           </div>
@@ -164,7 +164,7 @@ const App = {
       } else {
         headerNav.innerHTML = `
           <button class="nav-link ${this.currentRoute === '#/admin' ? 'active' : ''}" onclick="App.navigate('#/admin')">
-            <span>📊</span> Painel Geral
+            <span>📊</span> Painel (${arenaName})
           </button>
           <button class="nav-link ${this.currentRoute === '#/galeria' ? 'active' : ''}" onclick="App.navigate('#/galeria')">
             <span>📸</span> Galeria
@@ -175,9 +175,6 @@ const App = {
           <button class="nav-link ${this.currentRoute === '#/alunos' ? 'active' : ''}" onclick="App.navigate('#/alunos')">
             <span>👥</span> Alunos
           </button>
-          <button class="nav-link ${this.currentRoute === '#/arenas' ? 'active' : ''}" onclick="App.navigate('#/arenas')">
-            <span>🏖️</span> Arenas
-          </button>
           <button class="nav-link ${this.currentRoute === '#/professores' ? 'active' : ''}" onclick="App.navigate('#/professores')">
             <span>👨‍🏫</span> Professores
           </button>
@@ -185,8 +182,9 @@ const App = {
             <span>🗓️</span> Calendário
           </button>
           <div class="user-badge-header">
-            <span>👤 ${user.name}</span>
-            <span class="role-pill role-pill-admin">Admin</span>
+            <span>🛡️ ${user.name}</span>
+            <span style="font-size:0.75rem; color:#7dd3fc; font-weight:700;">📍 ${arenaName}</span>
+            <span class="role-pill role-pill-admin">Gestor</span>
             <button onclick="App.handleLogout()" title="Sair" style="background:none; border:none; color:#cbd5e1; cursor:pointer; font-size:1.1rem; margin-left:0.35rem;">🚪</button>
           </div>
         `;
@@ -242,21 +240,21 @@ const App = {
   },
 
   // ----------------------------------------------------
-  // LOGIN & CADASTRO
+  // LOGIN COM E-MAILS NO PADRÃO (nome).(arena)@(funcao).com
   // ----------------------------------------------------
   renderLogin() {
     const container = document.getElementById('loginView');
     if (!container) return;
 
     container.innerHTML = `
-      <div style="max-width: 440px; margin: 2rem auto;">
+      <div style="max-width: 460px; margin: 2rem auto;">
         
         <div style="text-align: center; margin-bottom: 2rem;">
           <div style="width: 76px; height: 76px; background: linear-gradient(135deg, #f59e0b, #f97316); border-radius: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 2.75rem; margin-bottom: 1rem; box-shadow: 0 10px 25px rgba(245, 158, 11, 0.35);">
             🏐
           </div>
           <h1 style="font-size: 1.85rem; color: #0f172a; margin-bottom: 0.25rem;">Vôlei de Praia Brasil</h1>
-          <p style="color: #64748b; font-size: 0.95rem;">Gestão de Aulas, Presenças e Quadras</p>
+          <p style="color: #64748b; font-size: 0.95rem;">Plataforma SaaS Multi-Arenas de Gestão de Aulas</p>
         </div>
 
         <div class="card" style="padding: 1.85rem; border-radius: 22px; box-shadow: var(--shadow-lg);">
@@ -264,10 +262,10 @@ const App = {
 
           <form onsubmit="App.handleLogin(event)">
             <div class="form-group">
-              <label for="loginEmail" class="form-label">E-mail Institucional</label>
-              <input type="email" id="loginEmail" class="form-control" placeholder="carlos@prof.com ou gestor@arenaadm.com" required autofocus>
+              <label for="loginEmail" class="form-label">E-mail / Login Institucional</label>
+              <input type="email" id="loginEmail" class="form-control" placeholder="felipe.ilha@prof.com ou heitor.ilha@adm.com" required autofocus>
               <div class="form-text">
-                Acesso exclusivo para <strong>@prof.com</strong> (Professores) ou <strong>@arenaadm.com</strong> (Administradores).
+                Padrão automático: <code>(nome).(arena)@prof.com</code> ou <code>@adm.com</code>.
               </div>
             </div>
 
@@ -283,21 +281,41 @@ const App = {
 
           <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-color); text-align: center; font-size: 0.9rem;">
             <p style="color: var(--text-muted);">
-              Primeiro acesso? <a href="#/cadastro" style="font-weight: 800;">Cadastre-se aqui</a>
+              Novo na plataforma? <a href="#/cadastro" style="font-weight: 800;">Cadastre-se com geração automática de e-mail</a>
             </p>
           </div>
         </div>
 
-        <!-- ATALHOS DE TESTE RÁPIDO -->
+        <!-- DEMO RÁPIDO POR ARENA (ISOLAMENTO MULTITENANT) -->
         <div style="background: #f1f5f9; border-radius: 16px; padding: 1.2rem; margin-top: 1.5rem; font-size: 0.85rem; color: #475569; border: 1px solid #e2e8f0;">
-          <strong style="color: #0f172a; display: block; margin-bottom: 0.5rem;">🚀 Acesso Rápido para Demonstração:</strong>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-            <button class="btn btn-sand btn-sm" onclick="App.quickFillLogin('carlos@prof.com', 'senha123')">
-              👨‍🏫 Prof. Carlos
-            </button>
-            <button class="btn btn-primary btn-sm" onclick="App.quickFillLogin('gestor@arenaadm.com', 'senha123')">
-              🛡️ Admin Roberto
-            </button>
+          <strong style="color: #0f172a; display: block; margin-bottom: 0.5rem;">🔒 Teste o Isolamento de Segurança por Arena:</strong>
+          
+          <div style="margin-bottom: 0.75rem;">
+            <span style="font-weight: 800; color: var(--primary-ocean);">🏖️ Arena Ilha:</span>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-top: 0.25rem;">
+              <button class="btn btn-sand btn-sm" onclick="App.quickFillLogin('felipe.ilha@prof.com', 'senha123')">
+                👨‍🏫 Prof. Felipe
+              </button>
+              <button class="btn btn-primary btn-sm" onclick="App.quickFillLogin('heitor.ilha@adm.com', 'senha123')">
+                🛡️ Gestor Heitor
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <span style="font-weight: 800; color: #ea580c;">🏖️ Arena Maroka (Isolada):</span>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-top: 0.25rem;">
+              <button class="btn btn-sand btn-sm" onclick="App.quickFillLogin('lucas.maroka@prof.com', 'senha123')">
+                👨‍🏫 Prof. Lucas
+              </button>
+              <button class="btn btn-primary btn-sm" onclick="App.quickFillLogin('marcos.maroka@adm.com', 'senha123')">
+                🛡️ Gestor Marcos
+              </button>
+            </div>
+          </div>
+          
+          <div style="margin-top: 0.65rem; font-size: 0.75rem; color: var(--text-muted);">
+            💡 <em>O Gestor da Ilha não vê as aulas e fotos postadas pela Arena Maroka!</em>
           </div>
         </div>
 
@@ -321,60 +339,116 @@ const App = {
 
     const result = window.store.login(email, pass);
     if (result.success) {
-      this.showToast(`Bem-vindo(a), ${result.user.name}!`, 'success');
+      const arenaName = window.store.getArenaById(result.user.arenaId)?.name || '';
+      this.showToast(`Bem-vindo(a), ${result.user.name}! (${arenaName})`, 'success');
       this.navigate(result.user.role === 'ADMIN' ? '#/admin' : '#/professor');
     } else {
       this.showToast(result.error, 'danger');
     }
   },
 
+  // ----------------------------------------------------
+  // CADASTRO COM GERAÇÃO AUTOMÁTICA DE E-MAIL EM TEMPO REAL
+  // ----------------------------------------------------
   renderRegister() {
     const container = document.getElementById('registerView');
     if (!container) return;
 
+    const arenas = window.store.getAllArenasGlobal();
+
     container.innerHTML = `
-      <div style="max-width: 480px; margin: 2rem auto;">
+      <div style="max-width: 500px; margin: 2rem auto;">
         
         <div style="text-align: center; margin-bottom: 1.5rem;">
           <h1 style="font-size: 1.85rem; color: #0f172a; margin-bottom: 0.25rem;">Cadastro de Usuário</h1>
-          <p style="color: #64748b; font-size: 0.95rem;">Acesso exclusivo para Professores e Administradores de Arena</p>
+          <p style="color: #64748b; font-size: 0.95rem;">Geração automática de login por Nome, Arena e Função</p>
         </div>
 
         <div class="card" style="padding: 1.85rem; border-radius: 22px; box-shadow: var(--shadow-lg);">
           <form onsubmit="App.handleRegister(event)">
             
+            <!-- 1. NOME -->
             <div class="form-group">
               <label for="regName" class="form-label">Nome Completo *</label>
-              <input type="text" id="regName" class="form-control" placeholder="Ex: Carlos Silva" required>
+              <input 
+                type="text" 
+                id="regName" 
+                class="form-control" 
+                placeholder="Ex: Felipe Gabriel ou Heitor Augusto" 
+                required 
+                oninput="App.updateAutoEmailPreview()"
+              >
             </div>
 
+            <!-- 2. ARENA -->
             <div class="form-group">
-              <label for="regEmail" class="form-label">E-mail Institucional *</label>
-              <input type="email" id="regEmail" class="form-control" placeholder="seu.nome@prof.com ou gestor@arenaadm.com" required>
-              <div class="form-text">
-                O papel é definido automaticamente pelo domínio:<br>
-                • <strong>@prof.com</strong> &rarr; Professor<br>
-                • <strong>@arenaadm.com</strong> &rarr; Administrador
+              <label for="regArena" class="form-label">Arena de Vôlei *</label>
+              <select 
+                id="regArena" 
+                class="form-select" 
+                required 
+                onchange="App.updateAutoEmailPreview()"
+                style="font-weight: 700;"
+              >
+                ${arenas.map(a => `<option value="${a.id}" data-name="${a.name}">${a.name}</option>`).join('')}
+              </select>
+            </div>
+
+            <!-- 3. FUNÇÃO / CAIXA DE SELEÇÃO -->
+            <div class="form-group">
+              <label for="regRole" class="form-label">Função na Arena *</label>
+              <select 
+                id="regRole" 
+                class="form-select" 
+                required 
+                onchange="App.updateAutoEmailPreview()"
+                style="font-weight: 800; color: var(--primary-ocean);"
+              >
+                <option value="PROFESSOR">🏐 Professor de Quadra (@prof.com)</option>
+                <option value="ADMIN">🛡️ Administrador / Gestor da Arena (@adm.com)</option>
+              </select>
+            </div>
+
+            <!-- 4. E-MAIL GERADO AUTOMATICAMENTE -->
+            <div class="form-group" style="background: #f0fdf4; border: 2px dashed #86efac; padding: 1rem; border-radius: var(--radius-md);">
+              <label for="regEmail" class="form-label" style="color: #166534;">
+                ⚡ E-mail / Login Gerado Automaticamente:
+              </label>
+              <input 
+                type="email" 
+                id="regEmail" 
+                class="form-control" 
+                readonly 
+                style="background: white; font-weight: 800; color: #15803d; font-size: 1.05rem;"
+                placeholder="Preencha o nome acima para gerar..." 
+                required
+              >
+              <div style="font-size: 0.8rem; color: #15803d; margin-top: 0.35rem;">
+                Formato padronizado: <code>(primeiro_nome).(arena)@(funcao).com</code>
               </div>
             </div>
 
+            <!-- 5. TELEFONE -->
             <div class="form-group">
               <label for="regPhone" class="form-label">Telefone / WhatsApp</label>
               <input type="tel" id="regPhone" class="form-control" placeholder="(21) 99999-9999">
             </div>
 
-            <div class="form-group">
-              <label for="regPassword" class="form-label">Senha de Acesso *</label>
-              <input type="password" id="regPassword" class="form-control" placeholder="Mínimo 6 caracteres" required>
+            <!-- 6. SENHAS -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+              <div class="form-group">
+                <label for="regPassword" class="form-label">Senha *</label>
+                <input type="password" id="regPassword" class="form-control" placeholder="Mínimo 6 dígitos" required>
+              </div>
+
+              <div class="form-group">
+                <label for="regPassConfirm" class="form-label">Confirmar Senha *</label>
+                <input type="password" id="regPassConfirm" class="form-control" placeholder="Repita a senha" required>
+              </div>
             </div>
 
-            <div class="form-group">
-              <label for="regPassConfirm" class="form-label">Confirmar Senha *</label>
-              <input type="password" id="regPassConfirm" class="form-control" placeholder="Repita a senha" required>
-            </div>
-
-            <button type="submit" class="btn btn-sand btn-block btn-lg" style="margin-top: 1.5rem;">
-              <span>✨</span> Finalizar Cadastro
+            <button type="submit" class="btn btn-sand btn-block btn-lg" style="margin-top: 1rem;">
+              <span>✨</span> Finalizar Cadastro & Entrar
             </button>
           </form>
 
@@ -389,19 +463,39 @@ const App = {
     `;
 
     this.showView('registerView');
+    this.updateAutoEmailPreview();
+  },
+
+  updateAutoEmailPreview() {
+    const nameInput = document.getElementById('regName');
+    const arenaSelect = document.getElementById('regArena');
+    const roleSelect = document.getElementById('regRole');
+    const emailInput = document.getElementById('regEmail');
+
+    if (!nameInput || !arenaSelect || !roleSelect || !emailInput) return;
+
+    const name = nameInput.value;
+    const selectedOption = arenaSelect.options[arenaSelect.selectedIndex];
+    const arenaName = selectedOption ? selectedOption.getAttribute('data-name') : 'ilha';
+    const role = roleSelect.value;
+
+    const autoEmail = window.store.generateEmail(name, arenaName, role);
+    emailInput.value = autoEmail;
   },
 
   handleRegister(event) {
     event.preventDefault();
     const name = document.getElementById('regName').value;
     const email = document.getElementById('regEmail').value;
+    const arenaId = document.getElementById('regArena').value;
+    const role = document.getElementById('regRole').value;
     const phone = document.getElementById('regPhone').value;
     const pass = document.getElementById('regPassword').value;
     const passConf = document.getElementById('regPassConfirm').value;
 
-    const result = window.store.register(name, email, phone, pass, passConf);
+    const result = window.store.register(name, email, phone, arenaId, role, pass, passConf);
     if (result.success) {
-      this.showToast(`Conta criada com sucesso! Papel: ${result.user.role === 'ADMIN' ? 'Administrador' : 'Professor'}`, 'success');
+      this.showToast(`Conta criada com sucesso! Login: ${result.user.email}`, 'success');
       this.navigate(result.user.role === 'ADMIN' ? '#/admin' : '#/professor');
     } else {
       this.showToast(result.error, 'danger');
@@ -415,13 +509,16 @@ const App = {
   },
 
   // ----------------------------------------------------
-  // PAINEL DO PROFESSOR (MEU PAINEL)
+  // PAINEL DO PROFESSOR (COM ISOLAMENTO)
   // ----------------------------------------------------
   renderProfessorDashboard() {
     const container = document.getElementById('professorDashboardView');
     if (!container) return;
 
     const user = window.store.getCurrentUser();
+    const arena = window.store.getArenaById(user.arenaId);
+    const arenaName = arena ? arena.name : 'Arena';
+
     const today = new Date().toISOString().split('T')[0];
     const todayBr = today.split('-').reverse().join('/');
 
@@ -445,17 +542,16 @@ const App = {
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
           <div>
             <span style="font-size: 0.85rem; font-weight: 800; color: var(--sand-warm); text-transform: uppercase; letter-spacing: 0.05em;">
-              Quadra de Vôlei de Praia
+              Quadra: ${arenaName}
             </span>
             <h1 style="font-size: 1.85rem; color: var(--primary-deep); margin-top: 0.15rem;">
               Olá, Prof. ${user.name}! 🏐
             </h1>
             <p style="color: var(--text-muted); font-size: 0.95rem;">
-              Hoje é <strong>${todayBr}</strong>. Acompanhe suas turmas e faça chamadas em menos de 1 minuto.
+              Hoje é <strong>${todayBr}</strong>. Faça chamadas e envie fotos das suas turmas da <strong>${arenaName}</strong>.
             </p>
           </div>
 
-          <!-- BOTÃO DE REGISTRO RÁPIDO COM DESTAQUE MÁXIMO -->
           <button class="btn btn-sand btn-lg" onclick="App.navigate('#/aula/nova')" style="box-shadow: 0 8px 22px rgba(245, 158, 11, 0.45); font-size: 1.15rem;">
             <span style="font-size: 1.4rem;">⚡</span> REGISTRAR NOVA AULA
           </button>
@@ -468,7 +564,7 @@ const App = {
           <div class="kpi-icon">📋</div>
           <div class="kpi-label">Aulas Hoje</div>
           <div class="kpi-value">${todayClasses.length}</div>
-          <div style="font-size: 0.75rem; color: var(--text-muted);">Sessões dadas/agendadas</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">${arenaName}</div>
         </div>
 
         <div class="kpi-card emerald">
@@ -509,7 +605,6 @@ const App = {
         ${todayClasses.length > 0 ? `
           <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
             ${todayClasses.map(c => {
-              const arena = window.store.getArenaById(c.arenaId)?.name || 'Arena';
               const total = c.attendances?.length || 0;
               const presents = c.attendances ? c.attendances.filter(a => a.present).length : 0;
               const rate = total > 0 ? Math.round((presents / total) * 100) : 0;
@@ -529,7 +624,7 @@ const App = {
                   <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem;">
                     <div>
                       <div style="font-weight: 800; font-size: 1.15rem; color: var(--primary-deep);">
-                        ${arena} &bull; <span style="color: var(--primary-ocean);">${c.groupName}</span>
+                        ${arenaName} &bull; <span style="color: var(--primary-ocean);">${c.groupName}</span>
                       </div>
                       <div style="font-size: 0.9rem; color: var(--text-muted);">
                         ⏰ Horário: <strong>${c.time || ''}</strong> &bull; Presentes: <strong>${presents}/${total} (${rate}%)</strong>
@@ -560,10 +655,10 @@ const App = {
           <div style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);">
             <div style="font-size: 3rem; margin-bottom: 0.75rem;">🏐</div>
             <p style="font-size: 1.1rem; font-weight: 800; color: var(--primary-deep); margin-bottom: 0.25rem;">
-              Nenhuma aula registrada para hoje ainda.
+              Nenhuma aula registrada para hoje na ${arenaName}.
             </p>
             <p style="font-size: 0.9rem; margin-bottom: 1.25rem;">
-              Ao iniciar ou encerrar seu treino em quadra, registre a turma e a presença em menos de 1 minuto.
+              Registre sua turma e chamada em menos de 1 minuto diretamente da quadra.
             </p>
             <button class="btn btn-sand" onclick="App.navigate('#/aula/nova')">
               ⚡ Registrar Aula Agora
@@ -572,11 +667,11 @@ const App = {
         `}
       </div>
 
-      <!-- ÚLTIMAS AULAS REGISTRADAS -->
+      <!-- ÚLTIMAS AULAS -->
       <div class="card">
         <div class="card-header">
           <h2 class="card-title">
-            <span>📋</span> Últimas Aulas Ministradas
+            <span>📋</span> Minhas Aulas Registradas
           </h2>
           <button class="btn btn-outline btn-sm" onclick="App.navigate('#/fechamento')">
             Ver Fechamento do Mês
@@ -598,7 +693,6 @@ const App = {
             </thead>
             <tbody>
               ${myClasses.slice(0, 8).map(c => {
-                const arena = window.store.getArenaById(c.arenaId)?.name || 'Arena';
                 const total = c.attendances?.length || 0;
                 const presents = c.attendances ? c.attendances.filter(a => a.present).length : 0;
                 const rate = total > 0 ? Math.round((presents / total) * 100) : 0;
@@ -607,7 +701,7 @@ const App = {
                 const formattedDate = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : c.date;
 
                 let badgeClass = 'badge-pending';
-                let statusLabel = '🟡 FOTO PENDENTE';
+                let statusLabel = '🟡 PENDENTE';
                 if (c.photoStatus === 'READY_TO_SEND') {
                   badgeClass = 'badge-ready';
                   statusLabel = '🔵 PREPARADO';
@@ -620,7 +714,7 @@ const App = {
                   <tr>
                     <td class="font-bold">${formattedDate}</td>
                     <td>${c.time || ''}</td>
-                    <td>${arena}</td>
+                    <td>${arenaName}</td>
                     <td><span style="font-weight: 700; color: var(--primary-ocean);">${c.groupName}</span></td>
                     <td><strong>${presents}/${total}</strong> <span class="text-muted" style="font-size:0.8rem;">(${rate}%)</span></td>
                     <td><span class="badge ${badgeClass}">${statusLabel}</span></td>
@@ -642,7 +736,503 @@ const App = {
   },
 
   // ----------------------------------------------------
-  // DETALHES DA AULA & UPLOAD / WHATSAPP
+  // PAINEL DO ADMINISTRADOR (COM ISOLAMENTO MULTITENANT)
+  // ----------------------------------------------------
+  renderAdminDashboard() {
+    const container = document.getElementById('adminDashboardView');
+    if (!container) return;
+
+    const user = window.store.getCurrentUser();
+    const arenaObj = window.store.getArenaById(user.arenaId);
+    const currentArenaName = arenaObj ? arenaObj.name : 'Todas as Arenas';
+
+    const today = new Date().toISOString().split('T')[0];
+    const todayBr = today.split('-').reverse().join('/');
+
+    // Aulas isoladas da arena do gestor
+    const classes = window.store.getClasses();
+    const todayClasses = classes.filter(c => c.date === today);
+    const activeProfsToday = new Set(todayClasses.map(c => c.professorId)).size;
+
+    let studentsToday = 0;
+    let totalSlotsToday = 0;
+    todayClasses.forEach(c => {
+      if (c.attendances) {
+        totalSlotsToday += c.attendances.length;
+        studentsToday += c.attendances.filter(a => a.present).length;
+      }
+    });
+    const presenceRateToday = totalSlotsToday > 0 ? Math.round((studentsToday / totalSlotsToday) * 100) : 100;
+    const photosToday = todayClasses.filter(c => c.photoStatus === 'RECEIVED' || c.photoStatus === 'READY_TO_SEND').length;
+
+    const currentMonth = new Date().getMonth() + 1;
+    const currentYear = new Date().getFullYear();
+    const monthStats = window.store.getMonthlyMetrics(currentMonth, currentYear);
+
+    const students = window.store.getStudents();
+    const professors = window.store.getProfessors();
+
+    container.innerHTML = `
+      <div>
+        
+        <div style="margin-bottom: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <span style="font-size: 0.85rem; font-weight: 800; color: #0284c7; text-transform: uppercase; letter-spacing: 0.05em;">
+                🛡️ Gestão Isolada: ${currentArenaName}
+              </span>
+              <h1 style="font-size: 1.85rem; color: var(--primary-deep); margin-top: 0.15rem;">
+                Painel Administrativo da ${currentArenaName} 📊
+              </h1>
+              <p style="color: var(--text-muted); font-size: 0.95rem;">
+                Visualização segura e restrita aos dados, professores e alunos da <strong>${currentArenaName}</strong> em ${todayBr}.
+              </p>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button class="btn btn-sand btn-sm" onclick="App.navigate('#/galeria')">
+                <span>📸</span> Galeria de Fotos
+              </button>
+              <button class="btn btn-primary btn-sm" onclick="App.navigate('#/relatorios')">
+                <span>📈</span> Ver Relatórios
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPIS DE HOJE -->
+        <h2 style="font-size: 1.2rem; color: var(--primary-deep); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+          <span>⚡</span> Métricas de Hoje (${todayBr})
+        </h2>
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon">🏐</div>
+            <div class="kpi-label">Aulas Hoje</div>
+            <div class="kpi-value">${todayClasses.length}</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">${currentArenaName}</div>
+          </div>
+
+          <div class="kpi-card emerald">
+            <div class="kpi-icon">👨‍🏫</div>
+            <div class="kpi-label">Professores em Quadra</div>
+            <div class="kpi-value">${activeProfsToday}</div>
+            <div style="font-size: 0.75rem; color: #059669;">Instrutores da arena</div>
+          </div>
+
+          <div class="kpi-card gold">
+            <div class="kpi-icon">🎯</div>
+            <div class="kpi-label">Presença Hoje</div>
+            <div class="kpi-value">${presenceRateToday}%</div>
+            <div style="font-size: 0.75rem; color: #d97706;">${studentsToday} alunos presentes</div>
+          </div>
+
+          <div class="kpi-card orange">
+            <div class="kpi-icon">📸</div>
+            <div class="kpi-label">Fotos Recebidas Hoje</div>
+            <div class="kpi-value">${photosToday}</div>
+            <div style="font-size: 0.75rem; color: #ea580c;">Registros fotográficos</div>
+          </div>
+        </div>
+
+        <!-- KPIS DO MÊS -->
+        <h2 style="font-size: 1.2rem; color: var(--primary-deep); margin-bottom: 0.75rem; margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+          <span>📅</span> Consolidado Mensal (${currentArenaName})
+        </h2>
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon">👥</div>
+            <div class="kpi-label">Alunos Matriculados</div>
+            <div class="kpi-value">${students.length}</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Cadastrados nesta arena</div>
+          </div>
+
+          <div class="kpi-card emerald">
+            <div class="kpi-icon">📋</div>
+            <div class="kpi-label">Aulas no Mês</div>
+            <div class="kpi-value">${monthStats.totalClasses}</div>
+            <div style="font-size: 0.75rem; color: #059669;">Realizadas</div>
+          </div>
+
+          <div class="kpi-card gold">
+            <div class="kpi-icon">📊</div>
+            <div class="kpi-label">Frequência Geral</div>
+            <div class="kpi-value">${monthStats.rate}%</div>
+            <div style="font-size: 0.75rem; color: #d97706;">Média dos alunos</div>
+          </div>
+
+          <div class="kpi-card orange">
+            <div class="kpi-icon">🌟</div>
+            <div class="kpi-label">Índice de Fotos</div>
+            <div class="kpi-value">${monthStats.photoRate}%</div>
+            <div style="font-size: 0.75rem; color: #ea580c;">${monthStats.totalPhotos} fotos registradas</div>
+          </div>
+        </div>
+
+        <!-- AULAS RECENTES -->
+        <div class="card" style="margin-top: 1.5rem;">
+          <div class="card-header">
+            <h2 class="card-title"><span>📋</span> Aulas Recentes na ${currentArenaName}</h2>
+            <button class="btn btn-outline btn-sm" onclick="App.navigate('#/calendario')">Ver Cronograma</button>
+          </div>
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Data/Hora</th>
+                  <th>Professor</th>
+                  <th>Turma</th>
+                  <th>Presença</th>
+                  <th>Status Foto</th>
+                  <th class="text-center">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${classes.slice(0, 8).map(c => {
+                  const prof = window.store.getProfessorById(c.professorId)?.name || 'Professor';
+                  const total = c.attendances?.length || 0;
+                  const presents = c.attendances ? c.attendances.filter(a => a.present).length : 0;
+                  const rate = total > 0 ? Math.round((presents / total) * 100) : 0;
+
+                  const dateParts = c.date.split('-');
+                  const formattedDate = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : c.date;
+
+                  let badgeClass = 'badge-pending';
+                  let statusLabel = '🟡 PENDENTE';
+                  if (c.photoStatus === 'READY_TO_SEND') {
+                    badgeClass = 'badge-ready';
+                    statusLabel = '🔵 PREPARADO';
+                  } else if (c.photoStatus === 'RECEIVED') {
+                    badgeClass = 'badge-received';
+                    statusLabel = '🟢 RECEBIDA';
+                  }
+
+                  return `
+                    <tr>
+                      <td class="font-bold">${formattedDate} <span style="font-weight:400; color:var(--text-muted); font-size:0.85rem;">${c.time || ''}</span></td>
+                      <td>${prof}</td>
+                      <td><span style="font-weight:700; color:var(--primary-ocean);">${c.groupName}</span></td>
+                      <td><strong>${presents}/${total}</strong> (${rate}%)</td>
+                      <td><span class="badge ${badgeClass}">${statusLabel}</span></td>
+                      <td class="text-center">
+                        <button class="btn btn-secondary btn-sm" onclick="App.navigate('#/aula/${c.id}')">Abrir</button>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    `;
+
+    this.showView('adminDashboardView');
+  },
+
+  // ----------------------------------------------------
+  // GESTÃO DE ALUNOS (ISOLADA)
+  // ----------------------------------------------------
+  renderStudents() {
+    const container = document.getElementById('studentsView');
+    if (!container) return;
+
+    const user = window.store.getCurrentUser();
+    const students = window.store.getStudents();
+    const arena = window.store.getArenaById(user.arenaId);
+    const arenaName = arena ? arena.name : 'Arena';
+
+    container.innerHTML = `
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+          <div>
+            <span style="font-size: 0.85rem; font-weight: 800; color: #0284c7; text-transform: uppercase; letter-spacing: 0.05em;">
+              Alunos da ${arenaName}
+            </span>
+            <h1 style="font-size: 1.85rem; color: var(--primary-deep); margin-top: 0.15rem;">
+              Gestão de Alunos & Turmas 👥
+            </h1>
+            <p style="color: var(--text-muted); font-size: 0.95rem;">
+              Total de <strong>${students.length}</strong> alunos matriculados na <strong>${arenaName}</strong>.
+            </p>
+          </div>
+
+          <button class="btn btn-sand" onclick="App.openModal('newStudentModal')">
+            <span>➕</span> Novo Aluno
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Nome do Aluno</th>
+                  <th>Arena</th>
+                  <th>Turma</th>
+                  <th>Telefone</th>
+                  <th>E-mail</th>
+                  <th class="text-center">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${students.map(s => {
+                  return `
+                    <tr>
+                      <td class="font-bold">${s.name}</td>
+                      <td>${arenaName}</td>
+                      <td><span style="font-weight:700; color:var(--primary-ocean);">${s.groupName || 'Geral'}</span></td>
+                      <td>${s.phone || '-'}</td>
+                      <td style="color:var(--text-muted); font-size:0.85rem;">${s.email || '-'}</td>
+                      <td class="text-center">
+                        <button class="btn btn-secondary btn-sm" style="color:#ef4444;" onclick="App.deleteStudent(${s.id})" title="Excluir Aluno">
+                          🗑️
+                        </button>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+
+    this.showView('studentsView');
+  },
+
+  deleteStudent(id) {
+    if (confirm('Deseja realmente remover este aluno?')) {
+      window.store.deleteStudent(id);
+      this.showToast('Aluno removido com sucesso.', 'info');
+      this.renderStudents();
+    }
+  },
+
+  // ----------------------------------------------------
+  // GESTÃO DE PROFESSORES (COM GERAÇÃO AUTOMÁTICA)
+  // ----------------------------------------------------
+  renderProfessores() {
+    const container = document.getElementById('professoresView');
+    if (!container) return;
+
+    const user = window.store.getCurrentUser();
+    const professors = window.store.getProfessors();
+    const arena = window.store.getArenaById(user.arenaId);
+    const arenaName = arena ? arena.name : 'Arena';
+
+    container.innerHTML = `
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+          <div>
+            <span style="font-size: 0.85rem; font-weight: 800; color: #0284c7; text-transform: uppercase;">
+              Corpo Docente da ${arenaName}
+            </span>
+            <h1 style="font-size: 1.85rem; color: var(--primary-deep); margin-top: 0.15rem;">
+              Professores da Arena 👨‍🏫
+            </h1>
+            <p style="color: var(--text-muted); font-size: 0.95rem;">
+              Professores cadastrados com e-mail automático no padrão <code>(nome).(arena)@prof.com</code>.
+            </p>
+          </div>
+
+          <button class="btn btn-sand" onclick="App.openNewProfModal()">
+            <span>➕</span> Novo Professor
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Nome do Professor</th>
+                  <th>Login Gerado (@prof.com)</th>
+                  <th>Telefone</th>
+                  <th>Aulas na Arena</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${professors.map(p => {
+                  const clsCount = window.store.state.classes.filter(c => c.professorId === p.id && c.arenaId === user.arenaId).length;
+                  const initial = p.name ? p.name.charAt(0).toUpperCase() : 'P';
+                  return `
+                    <tr>
+                      <td class="font-bold">
+                        <div style="display: flex; align-items: center; gap: 0.6rem;">
+                          <div class="student-avatar" style="width:36px; height:36px; font-size:0.9rem;">${initial}</div>
+                          <span>${p.name}</span>
+                        </div>
+                      </td>
+                      <td><code style="font-weight:800; color:#0369a1;">${p.email}</code></td>
+                      <td>${p.phone || '-'}</td>
+                      <td><strong>${clsCount}</strong> aulas</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+
+    this.showView('professoresView');
+  },
+
+  openNewProfModal() {
+    const user = window.store.getCurrentUser();
+    const arena = window.store.getArenaById(user.arenaId);
+    const arenaName = arena ? arena.name : 'Ilha';
+
+    const modalArenaSpan = document.getElementById('new_prof_arena_label');
+    if (modalArenaSpan) modalArenaSpan.textContent = arenaName;
+
+    this.openModal('newProfModal');
+  },
+
+  updateNewProfEmailPreview() {
+    const nameInput = document.getElementById('new_prof_name');
+    const emailInput = document.getElementById('new_prof_email');
+    if (!nameInput || !emailInput) return;
+
+    const user = window.store.getCurrentUser();
+    const arena = window.store.getArenaById(user.arenaId);
+    const arenaName = arena ? arena.name : 'ilha';
+
+    const autoEmail = window.store.generateEmail(nameInput.value, arenaName, 'PROFESSOR');
+    emailInput.value = autoEmail;
+  },
+
+  // ----------------------------------------------------
+  // GESTÃO DE ARENAS & CALENDÁRIO
+  // ----------------------------------------------------
+  renderArenas() {
+    const container = document.getElementById('arenasView');
+    if (!container) return;
+
+    const arenas = window.store.getArenas();
+
+    container.innerHTML = `
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+          <div>
+            <span style="font-size: 0.85rem; font-weight: 800; color: #0284c7; text-transform: uppercase;">
+              Infraestrutura
+            </span>
+            <h1 style="font-size: 1.85rem; color: var(--primary-deep); margin-top: 0.15rem;">
+              Minha Arena de Vôlei 🏖️
+            </h1>
+            <p style="color: var(--text-muted); font-size: 0.95rem;">
+              Dados cadastrais da sua quadra.
+            </p>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr; gap: 1.25rem;">
+          ${arenas.map(a => {
+            const stCount = window.store.getStudents(a.id).length;
+            const clsCount = window.store.state.classes.filter(c => c.arenaId === a.id).length;
+            return `
+              <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="font-size: 1.6rem;">🏖️</span>
+                    <h2 style="font-size: 1.25rem; color: var(--primary-deep);">${a.name}</h2>
+                  </div>
+                  <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem;">
+                    📍 ${a.location}
+                  </p>
+                </div>
+
+                <div style="display: flex; gap: 1.25rem; align-items: center;">
+                  <div style="text-align: right;">
+                    <div style="font-size: 1.15rem; font-weight: 900; color: var(--primary-ocean);">${stCount} Alunos</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">${clsCount} Aulas registradas</div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+
+    this.showView('arenasView');
+  },
+
+  renderCalendar() {
+    const container = document.getElementById('calendarView');
+    if (!container) return;
+
+    const user = window.store.getCurrentUser();
+    const arena = window.store.getArenaById(user.arenaId);
+    const arenaName = arena ? arena.name : 'Arena';
+    const classes = window.store.getClasses();
+
+    container.innerHTML = `
+      <div>
+        <div style="margin-bottom: 1.5rem;">
+          <span style="font-size: 0.85rem; font-weight: 800; color: #0284c7; text-transform: uppercase;">
+            Cronograma da ${arenaName}
+          </span>
+          <h1 style="font-size: 1.85rem; color: var(--primary-deep); margin-top: 0.15rem;">
+            Calendário de Aulas 🗓️
+          </h1>
+          <p style="color: var(--text-muted); font-size: 0.95rem;">
+            Sessões ministradas na <strong>${arenaName}</strong>.
+          </p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          ${classes.map(c => {
+            const prof = window.store.getProfessorById(c.professorId)?.name || 'Professor';
+            const dateParts = c.date.split('-');
+            const formattedDate = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : c.date;
+
+            const total = c.attendances?.length || 0;
+            const presents = c.attendances ? c.attendances.filter(a => a.present).length : 0;
+
+            let badgeClass = 'badge-pending';
+            let statusLabel = '🟡 PENDENTE';
+            if (c.photoStatus === 'READY_TO_SEND') {
+              badgeClass = 'badge-ready';
+              statusLabel = '🔵 PREPARADO';
+            } else if (c.photoStatus === 'RECEIVED') {
+              badgeClass = 'badge-received';
+              statusLabel = '🟢 RECEBIDA';
+            }
+
+            return `
+              <div class="card" style="margin-bottom: 0; padding: 1.15rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+                  <div>
+                    <div style="font-weight: 800; font-size: 1.1rem; color: var(--primary-deep);">
+                      📅 ${formattedDate} às ${c.time || ''} &bull; ${arenaName}
+                    </div>
+                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.2rem;">
+                      <strong>Turma:</strong> ${c.groupName} &bull; <strong>Professor:</strong> ${prof} &bull; <strong>Presentes:</strong> ${presents}/${total} alunos
+                    </div>
+                  </div>
+
+                  <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span class="badge ${badgeClass}">${statusLabel}</span>
+                    <button class="btn btn-secondary btn-sm" onclick="App.navigate('#/aula/${c.id}')">Ver</button>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+
+    this.showView('calendarView');
+  },
+
+  // ----------------------------------------------------
+  // DETALHES DA AULA & FECHAMENTO DO MÊS
   // ----------------------------------------------------
   renderClassDetail(classId) {
     const container = document.getElementById('classDetailView');
@@ -652,15 +1242,8 @@ const App = {
     const cls = window.store.getClassById(classId);
 
     if (!cls) {
-      this.showToast('Aula não encontrada.', 'danger');
+      this.showToast('Você não possui permissão para acessar esta aula ou ela não existe.', 'danger');
       this.navigate(user?.role === 'ADMIN' ? '#/admin' : '#/professor');
-      return;
-    }
-
-    // Isolamento de dados: professor só acessa suas próprias aulas
-    if (user.role === 'PROFESSOR' && cls.professorId !== user.id) {
-      this.showToast('Você não possui permissão para acessar esta área.', 'danger');
-      this.navigate('#/professor');
       return;
     }
 
@@ -697,7 +1280,6 @@ const App = {
           </span>
         </div>
 
-        <!-- CABEÇALHO DA AULA -->
         <div class="card" style="border-top: 5px solid var(--primary-ocean);">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
             <div>
@@ -729,8 +1311,7 @@ const App = {
           ` : ''}
         </div>
 
-        <!-- SEÇÃO DA FOTO DA AULA -->
-        <div class="card" id="detailPhotoSection">
+        <div class="card">
           <div class="card-header">
             <h2 class="card-title">
               <span>📸</span> Foto Oficial da Aula
@@ -770,7 +1351,6 @@ const App = {
           `}
         </div>
 
-        <!-- LISTA DE CHAMADA REALIZADA -->
         <div class="card">
           <div class="card-header">
             <h2 class="card-title">
@@ -843,9 +1423,6 @@ const App = {
     reader.readAsDataURL(file);
   },
 
-  // ----------------------------------------------------
-  // FECHAMENTO DO MÊS (PROFESSOR)
-  // ----------------------------------------------------
   renderMonthlyClose() {
     const container = document.getElementById('monthlyCloseView');
     if (!container) return;
@@ -876,7 +1453,7 @@ const App = {
               Fechamento do Mês
             </h1>
             <p style="color: var(--text-muted); font-size: 0.95rem;">
-              Consolidado de aulas ministradas, frequência dos alunos e entrega de fotos.
+              Consolidado de aulas ministradas e frequência dos alunos.
             </p>
           </div>
 
@@ -895,13 +1472,12 @@ const App = {
           </div>
         </div>
 
-        <!-- KPIS DO MÊS -->
         <div class="kpi-grid">
           <div class="kpi-card">
             <div class="kpi-icon">🏐</div>
             <div class="kpi-label">Aulas Dadas</div>
             <div class="kpi-value">${stats.totalClasses}</div>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">No mês selecionado</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">No mês</div>
           </div>
 
           <div class="kpi-card emerald">
@@ -915,7 +1491,7 @@ const App = {
             <div class="kpi-icon">🎯</div>
             <div class="kpi-label">Taxa Média</div>
             <div class="kpi-value">${stats.rate}%</div>
-            <div style="font-size: 0.75rem; color: #d97706;">Frequência geral</div>
+            <div style="font-size: 0.75rem; color: #d97706;">Frequência</div>
           </div>
 
           <div class="kpi-card orange">
@@ -928,7 +1504,6 @@ const App = {
           </div>
         </div>
 
-        <!-- TABELA DO FECHAMENTO -->
         <div class="card">
           <div class="card-header">
             <h2 class="card-title">
@@ -946,7 +1521,6 @@ const App = {
                   <tr>
                     <th>Data</th>
                     <th>Horário</th>
-                    <th>Arena</th>
                     <th>Turma</th>
                     <th>Presentes</th>
                     <th>Taxa (%)</th>
@@ -956,7 +1530,6 @@ const App = {
                 </thead>
                 <tbody>
                   ${stats.classes.map(c => {
-                    const arena = window.store.getArenaById(c.arenaId)?.name || 'Arena';
                     const total = c.attendances?.length || 0;
                     const presents = c.attendances ? c.attendances.filter(a => a.present).length : 0;
                     const rate = total > 0 ? Math.round((presents / total) * 100) : 0;
@@ -978,7 +1551,6 @@ const App = {
                       <tr>
                         <td class="font-bold">${formattedDate}</td>
                         <td>${c.time || ''}</td>
-                        <td>${arena}</td>
                         <td><span style="font-weight: 700; color: var(--primary-ocean);">${c.groupName}</span></td>
                         <td><strong>${presents}/${total}</strong></td>
                         <td><strong>${rate}%</strong></td>
@@ -1012,504 +1584,6 @@ const App = {
   },
 
   // ----------------------------------------------------
-  // PAINEL ADMINISTRATIVO CONSOLIDADO
-  // ----------------------------------------------------
-  renderAdminDashboard() {
-    const container = document.getElementById('adminDashboardView');
-    if (!container) return;
-
-    const today = new Date().toISOString().split('T')[0];
-    const todayBr = today.split('-').reverse().join('/');
-
-    const allTodayClasses = window.store.state.classes.filter(c => c.date === today);
-    const activeProfsToday = new Set(allTodayClasses.map(c => c.professorId)).size;
-
-    let studentsToday = 0;
-    let totalSlotsToday = 0;
-    allTodayClasses.forEach(c => {
-      if (c.attendances) {
-        totalSlotsToday += c.attendances.length;
-        studentsToday += c.attendances.filter(a => a.present).length;
-      }
-    });
-    const presenceRateToday = totalSlotsToday > 0 ? Math.round((studentsToday / totalSlotsToday) * 100) : 100;
-    const photosToday = allTodayClasses.filter(c => c.photoStatus === 'RECEIVED' || c.photoStatus === 'READY_TO_SEND').length;
-
-    const currentMonth = new Date().getMonth() + 1;
-    const currentYear = new Date().getFullYear();
-    const monthStats = window.store.getMonthlyMetrics(currentMonth, currentYear);
-
-    const arenas = window.store.getArenas();
-    const recentClasses = window.store.getClasses().slice(0, 8);
-
-    container.innerHTML = `
-      <div>
-        
-        <div style="margin-bottom: 1.5rem;">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
-            <div>
-              <span style="font-size: 0.85rem; font-weight: 800; color: #0284c7; text-transform: uppercase; letter-spacing: 0.05em;">
-                Gestão Executiva das Arenas
-              </span>
-              <h1 style="font-size: 1.85rem; color: var(--primary-deep); margin-top: 0.15rem;">
-                Painel Administrativo Consolidado 📊
-              </h1>
-              <p style="color: var(--text-muted); font-size: 0.95rem;">
-                Visão global das quadras, frequência e fotos em <strong>${todayBr}</strong>.
-              </p>
-            </div>
-
-            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-              <button class="btn btn-sand btn-sm" onclick="App.navigate('#/galeria')">
-                <span>📸</span> Galeria Central
-              </button>
-              <button class="btn btn-primary btn-sm" onclick="App.navigate('#/relatorios')">
-                <span>📈</span> Ver Relatórios
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 1. MÉTRICAS DE HOJE -->
-        <h2 style="font-size: 1.2rem; color: var(--primary-deep); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
-          <span>⚡</span> Métricas de Hoje (${todayBr})
-        </h2>
-        <div class="kpi-grid">
-          <div class="kpi-card">
-            <div class="kpi-icon">🏐</div>
-            <div class="kpi-label">Aulas Hoje</div>
-            <div class="kpi-value">${allTodayClasses.length}</div>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">Sessões nas arenas</div>
-          </div>
-
-          <div class="kpi-card emerald">
-            <div class="kpi-icon">👨‍🏫</div>
-            <div class="kpi-label">Professores em Quadra</div>
-            <div class="kpi-value">${activeProfsToday}</div>
-            <div style="font-size: 0.75rem; color: #059669;">Instrutores ativos</div>
-          </div>
-
-          <div class="kpi-card gold">
-            <div class="kpi-icon">🎯</div>
-            <div class="kpi-label">Presença Geral Hoje</div>
-            <div class="kpi-value">${presenceRateToday}%</div>
-            <div style="font-size: 0.75rem; color: #d97706;">${studentsToday} alunos presentes</div>
-          </div>
-
-          <div class="kpi-card orange">
-            <div class="kpi-icon">📸</div>
-            <div class="kpi-label">Fotos Recebidas Hoje</div>
-            <div class="kpi-value">${photosToday}</div>
-            <div style="font-size: 0.75rem; color: #ea580c;">Registros fotográficos</div>
-          </div>
-        </div>
-
-        <!-- 2. MÉTRICAS DO MÊS -->
-        <h2 style="font-size: 1.2rem; color: var(--primary-deep); margin-bottom: 0.75rem; margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-          <span>📅</span> Métricas do Mês Atual
-        </h2>
-        <div class="kpi-grid">
-          <div class="kpi-card">
-            <div class="kpi-icon">🏖️</div>
-            <div class="kpi-label">Total Arenas</div>
-            <div class="kpi-value">${arenas.length}</div>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">Quadras ativas</div>
-          </div>
-
-          <div class="kpi-card emerald">
-            <div class="kpi-icon">📋</div>
-            <div class="kpi-label">Aulas no Mês</div>
-            <div class="kpi-value">${monthStats.totalClasses}</div>
-            <div style="font-size: 0.75rem; color: #059669;">Realizadas</div>
-          </div>
-
-          <div class="kpi-card gold">
-            <div class="kpi-icon">📊</div>
-            <div class="kpi-label">Taxa Média do Mês</div>
-            <div class="kpi-value">${monthStats.rate}%</div>
-            <div style="font-size: 0.75rem; color: #d97706;">Frequência geral</div>
-          </div>
-
-          <div class="kpi-card orange">
-            <div class="kpi-icon">🌟</div>
-            <div class="kpi-label">Índice de Fotos</div>
-            <div class="kpi-value">${monthStats.photoRate}%</div>
-            <div style="font-size: 0.75rem; color: #ea580c;">${monthStats.totalPhotos} fotos de ${monthStats.totalClasses} aulas</div>
-          </div>
-        </div>
-
-        <!-- 3. ARENAS & AULAS RECENTES -->
-        <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin-top: 1.5rem;">
-          
-          <div class="card">
-            <div class="card-header">
-              <h2 class="card-title"><span>🏖️</span> Resumo das Arenas</h2>
-              <button class="btn btn-secondary btn-sm" onclick="App.navigate('#/arenas')">Gerenciar Arenas</button>
-            </div>
-            <div class="table-responsive">
-              <table class="custom-table">
-                <thead>
-                  <tr>
-                    <th>Arena</th>
-                    <th>Localização</th>
-                    <th>Alunos Matriculados</th>
-                    <th>Aulas Registradas</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${arenas.map(a => {
-                    const stCount = window.store.getStudents(a.id).length;
-                    const clsCount = window.store.state.classes.filter(c => c.arenaId === a.id).length;
-                    return `
-                      <tr>
-                        <td class="font-bold">${a.name}</td>
-                        <td style="font-size:0.85rem; color:var(--text-muted);">${a.location}</td>
-                        <td><span style="font-weight:800; color:var(--primary-ocean);">${stCount}</span> alunos</td>
-                        <td><strong>${clsCount}</strong> aulas</td>
-                      </tr>
-                    `;
-                  }).join('')}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-header">
-              <h2 class="card-title"><span>📋</span> Aulas Recentes (Todas as Arenas)</h2>
-              <button class="btn btn-outline btn-sm" onclick="App.navigate('#/calendario')">Ver Calendário</button>
-            </div>
-            <div class="table-responsive">
-              <table class="custom-table">
-                <thead>
-                  <tr>
-                    <th>Data/Hora</th>
-                    <th>Arena</th>
-                    <th>Professor</th>
-                    <th>Turma</th>
-                    <th>Presença</th>
-                    <th>Status Foto</th>
-                    <th class="text-center">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${recentClasses.map(c => {
-                    const arena = window.store.getArenaById(c.arenaId)?.name || 'Arena';
-                    const prof = window.store.getProfessorById(c.professorId)?.name || 'Professor';
-                    const total = c.attendances?.length || 0;
-                    const presents = c.attendances ? c.attendances.filter(a => a.present).length : 0;
-                    const rate = total > 0 ? Math.round((presents / total) * 100) : 0;
-
-                    const dateParts = c.date.split('-');
-                    const formattedDate = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : c.date;
-
-                    let badgeClass = 'badge-pending';
-                    let statusLabel = '🟡 PENDENTE';
-                    if (c.photoStatus === 'READY_TO_SEND') {
-                      badgeClass = 'badge-ready';
-                      statusLabel = '🔵 PREPARADO';
-                    } else if (c.photoStatus === 'RECEIVED') {
-                      badgeClass = 'badge-received';
-                      statusLabel = '🟢 RECEBIDA';
-                    }
-
-                    return `
-                      <tr>
-                        <td class="font-bold">${formattedDate} <span style="font-weight:400; color:var(--text-muted); font-size:0.85rem;">${c.time || ''}</span></td>
-                        <td>${arena}</td>
-                        <td>${prof}</td>
-                        <td><span style="font-weight:700; color:var(--primary-ocean);">${c.groupName}</span></td>
-                        <td><strong>${presents}/${total}</strong> (${rate}%)</td>
-                        <td><span class="badge ${badgeClass}">${statusLabel}</span></td>
-                        <td class="text-center">
-                          <button class="btn btn-secondary btn-sm" onclick="App.navigate('#/aula/${c.id}')">Abrir</button>
-                        </td>
-                      </tr>
-                    `;
-                  }).join('')}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-        </div>
-
-      </div>
-    `;
-
-    this.showView('adminDashboardView');
-  },
-
-  // ----------------------------------------------------
-  // GESTÃO DE ALUNOS, ARENAS, PROFESSORES, CALENDÁRIO
-  // ----------------------------------------------------
-  renderStudents() {
-    const container = document.getElementById('studentsView');
-    if (!container) return;
-
-    const students = window.store.getStudents();
-    const arenas = window.store.getArenas();
-
-    container.innerHTML = `
-      <div>
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
-          <div>
-            <span style="font-size: 0.85rem; font-weight: 800; color: #0284c7; text-transform: uppercase; letter-spacing: 0.05em;">
-              Matrículas e Quadras
-            </span>
-            <h1 style="font-size: 1.85rem; color: var(--primary-deep); margin-top: 0.15rem;">
-              Gestão de Alunos & Turmas 👥
-            </h1>
-            <p style="color: var(--text-muted); font-size: 0.95rem;">
-              Total de <strong>${students.length}</strong> alunos ativos no sistema.
-            </p>
-          </div>
-
-          <button class="btn btn-sand" onclick="App.openModal('newStudentModal')">
-            <span>➕</span> Novo Aluno
-          </button>
-        </div>
-
-        <div class="card">
-          <div class="table-responsive">
-            <table class="custom-table">
-              <thead>
-                <tr>
-                  <th>Nome do Aluno</th>
-                  <th>Arena</th>
-                  <th>Turma</th>
-                  <th>Telefone</th>
-                  <th>E-mail</th>
-                  <th class="text-center">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${students.map(s => {
-                  const arena = window.store.getArenaById(s.arenaId)?.name || 'Arena';
-                  return `
-                    <tr>
-                      <td class="font-bold">${s.name}</td>
-                      <td>${arena}</td>
-                      <td><span style="font-weight:700; color:var(--primary-ocean);">${s.groupName || 'Geral'}</span></td>
-                      <td>${s.phone || '-'}</td>
-                      <td style="color:var(--text-muted); font-size:0.85rem;">${s.email || '-'}</td>
-                      <td class="text-center">
-                        <button class="btn btn-secondary btn-sm" style="color:#ef4444;" onclick="App.deleteStudent(${s.id})" title="Excluir Aluno">
-                          🗑️
-                        </button>
-                      </td>
-                    </tr>
-                  `;
-                }).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    `;
-
-    this.showView('studentsView');
-  },
-
-  deleteStudent(id) {
-    if (confirm('Deseja realmente remover este aluno?')) {
-      window.store.deleteStudent(id);
-      this.showToast('Aluno removido com sucesso.', 'info');
-      this.renderStudents();
-    }
-  },
-
-  renderArenas() {
-    const container = document.getElementById('arenasView');
-    if (!container) return;
-
-    const arenas = window.store.getArenas();
-
-    container.innerHTML = `
-      <div>
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
-          <div>
-            <span style="font-size: 0.85rem; font-weight: 800; color: #0284c7; text-transform: uppercase;">
-              Infraestrutura
-            </span>
-            <h1 style="font-size: 1.85rem; color: var(--primary-deep); margin-top: 0.15rem;">
-              Gestão de Arenas de Vôlei 🏖️
-            </h1>
-            <p style="color: var(--text-muted); font-size: 0.95rem;">
-              Locais e quadras cadastradas no sistema.
-            </p>
-          </div>
-
-          <button class="btn btn-sand" onclick="App.openModal('newArenaModal')">
-            <span>➕</span> Nova Arena
-          </button>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr; gap: 1.25rem;">
-          ${arenas.map(a => {
-            const stCount = window.store.getStudents(a.id).length;
-            const clsCount = window.store.state.classes.filter(c => c.arenaId === a.id).length;
-            return `
-              <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                <div>
-                  <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <span style="font-size: 1.6rem;">🏖️</span>
-                    <h2 style="font-size: 1.25rem; color: var(--primary-deep);">${a.name}</h2>
-                  </div>
-                  <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem;">
-                    📍 ${a.location}
-                  </p>
-                </div>
-
-                <div style="display: flex; gap: 1.25rem; align-items: center;">
-                  <div style="text-align: right;">
-                    <div style="font-size: 1.15rem; font-weight: 900; color: var(--primary-ocean);">${stCount} Alunos</div>
-                    <div style="font-size: 0.8rem; color: var(--text-muted);">${clsCount} Aulas dadas</div>
-                  </div>
-                </div>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      </div>
-    `;
-
-    this.showView('arenasView');
-  },
-
-  renderProfessores() {
-    const container = document.getElementById('professoresView');
-    if (!container) return;
-
-    const professors = window.store.getProfessors();
-
-    container.innerHTML = `
-      <div>
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
-          <div>
-            <span style="font-size: 0.85rem; font-weight: 800; color: #0284c7; text-transform: uppercase;">
-              Corpo Docente
-            </span>
-            <h1 style="font-size: 1.85rem; color: var(--primary-deep); margin-top: 0.15rem;">
-              Gestão de Professores 👨‍🏫
-            </h1>
-            <p style="color: var(--text-muted); font-size: 0.95rem;">
-              Professores autorizados com acesso ao Meu Painel e Registro Rápido.
-            </p>
-          </div>
-
-          <button class="btn btn-sand" onclick="App.openModal('newProfModal')">
-            <span>➕</span> Novo Professor
-          </button>
-        </div>
-
-        <div class="card">
-          <div class="table-responsive">
-            <table class="custom-table">
-              <thead>
-                <tr>
-                  <th>Nome do Professor</th>
-                  <th>E-mail (@prof.com)</th>
-                  <th>Telefone</th>
-                  <th>Aulas Ministradas</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${professors.map(p => {
-                  const clsCount = window.store.state.classes.filter(c => c.professorId === p.id).length;
-                  const initial = p.name ? p.name.charAt(0).toUpperCase() : 'P';
-                  return `
-                    <tr>
-                      <td class="font-bold">
-                        <div style="display: flex; align-items: center; gap: 0.6rem;">
-                          <div class="student-avatar" style="width:36px; height:36px; font-size:0.9rem;">${initial}</div>
-                          <span>${p.name}</span>
-                        </div>
-                      </td>
-                      <td><code>${p.email}</code></td>
-                      <td>${p.phone || '-'}</td>
-                      <td><strong>${clsCount}</strong> aulas</td>
-                    </tr>
-                  `;
-                }).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    `;
-
-    this.showView('professoresView');
-  },
-
-  renderCalendar() {
-    const container = document.getElementById('calendarView');
-    if (!container) return;
-
-    const classes = window.store.getClasses();
-
-    container.innerHTML = `
-      <div>
-        <div style="margin-bottom: 1.5rem;">
-          <span style="font-size: 0.85rem; font-weight: 800; color: #0284c7; text-transform: uppercase;">
-            Cronograma Geral
-          </span>
-          <h1 style="font-size: 1.85rem; color: var(--primary-deep); margin-top: 0.15rem;">
-            Calendário de Aulas 🗓️
-          </h1>
-          <p style="color: var(--text-muted); font-size: 0.95rem;">
-            Visão cronológica de todas as sessões em todas as quadras.
-          </p>
-        </div>
-
-        <div style="display: flex; flex-direction: column; gap: 1rem;">
-          ${classes.map(c => {
-            const arena = window.store.getArenaById(c.arenaId)?.name || 'Arena';
-            const prof = window.store.getProfessorById(c.professorId)?.name || 'Professor';
-            const dateParts = c.date.split('-');
-            const formattedDate = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : c.date;
-
-            const total = c.attendances?.length || 0;
-            const presents = c.attendances ? c.attendances.filter(a => a.present).length : 0;
-
-            let badgeClass = 'badge-pending';
-            let statusLabel = '🟡 PENDENTE';
-            if (c.photoStatus === 'READY_TO_SEND') {
-              badgeClass = 'badge-ready';
-              statusLabel = '🔵 PREPARADO';
-            } else if (c.photoStatus === 'RECEIVED') {
-              badgeClass = 'badge-received';
-              statusLabel = '🟢 RECEBIDA';
-            }
-
-            return `
-              <div class="card" style="margin-bottom: 0; padding: 1.15rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
-                  <div>
-                    <div style="font-weight: 800; font-size: 1.1rem; color: var(--primary-deep);">
-                      📅 ${formattedDate} às ${c.time || ''} &bull; ${arena}
-                    </div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.2rem;">
-                      <strong>Turma:</strong> ${c.groupName} &bull; <strong>Professor:</strong> ${prof} &bull; <strong>Presentes:</strong> ${presents}/${total} alunos
-                    </div>
-                  </div>
-
-                  <div style="display: flex; align-items: center; gap: 0.75rem;">
-                    <span class="badge ${badgeClass}">${statusLabel}</span>
-                    <button class="btn btn-secondary btn-sm" onclick="App.navigate('#/aula/${c.id}')">Ver</button>
-                  </div>
-                </div>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      </div>
-    `;
-
-    this.showView('calendarView');
-  },
-
-  // ----------------------------------------------------
   // MODAIS & TOASTS
   // ----------------------------------------------------
   openModal(modalId) {
@@ -1535,7 +1609,7 @@ const App = {
     toast.style.bottom = '90px';
     toast.style.right = '20px';
     toast.style.zIndex = '9999';
-    toast.style.maxWidth = '360px';
+    toast.style.maxWidth = '380px';
     toast.style.boxShadow = 'var(--shadow-xl)';
     toast.innerHTML = `
       <div>${message}</div>
@@ -1553,7 +1627,6 @@ const App = {
 
 window.App = App;
 
-// Inicializa a aplicação quando a página carregar
 document.addEventListener('DOMContentLoaded', () => {
   window.App.init();
 });

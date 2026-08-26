@@ -1,6 +1,6 @@
 /**
  * ==========================================================================
- * RELATÓRIOS ADMINISTRATIVOS & EXPORTAÇÃO CSV
+ * RELATÓRIOS ADMINISTRATIVOS & EXPORTAÇÃO CSV (COM ISOLAMENTO POR ARENA)
  * ==========================================================================
  */
 
@@ -23,6 +23,9 @@ const Reports = {
       return;
     }
 
+    const arenaObj = window.store.getArenaById(user.arenaId);
+    const arenaName = arenaObj ? arenaObj.name : 'Minha Arena';
+
     const meses = [
       '', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
       'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
@@ -37,13 +40,13 @@ const Reports = {
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
           <div>
             <span style="font-size: 0.85rem; font-weight: 800; color: #0284c7; text-transform: uppercase; letter-spacing: 0.05em;">
-              Auditoria e Desempenho
+              Auditoria de Desempenho &bull; ${arenaName}
             </span>
             <h1 style="font-size: 1.85rem; color: var(--primary-deep); margin-top: 0.15rem;">
-              Relatórios Administrativos 📈
+              Relatórios da ${arenaName} 📈
             </h1>
             <p style="color: var(--text-muted); font-size: 0.95rem;">
-              Consolidado de frequência, aulas dadas e fotos por professor e por arena.
+              Consolidado de frequência e entrega de fotos dos professores da <strong>${arenaName}</strong>.
             </p>
           </div>
 
@@ -69,11 +72,11 @@ const Reports = {
           </div>
         </div>
 
-        <!-- 1. RELATÓRIO POR PROFESSOR -->
+        <!-- 1. RELATÓRIO POR PROFESSOR DA ARENA -->
         <div class="card" style="margin-bottom: 2rem;">
           <div class="card-header">
             <h2 class="card-title">
-              <span>👨‍🏫</span> Desempenho por Professor (${meses[this.selectedMonth]}/${this.selectedYear})
+              <span>👨‍🏫</span> Desempenho dos Professores da ${arenaName} (${meses[this.selectedMonth]}/${this.selectedYear})
             </h2>
           </div>
 
@@ -82,11 +85,11 @@ const Reports = {
           </div>
         </div>
 
-        <!-- 2. RELATÓRIO POR ARENA -->
+        <!-- 2. RESUMO CONSOLIDADO DA ARENA -->
         <div class="card">
           <div class="card-header">
             <h2 class="card-title">
-              <span>🏖️</span> Desempenho por Arena (${meses[this.selectedMonth]}/${this.selectedYear})
+              <span>🏖️</span> Resumo da ${arenaName} (${meses[this.selectedMonth]}/${this.selectedYear})
             </h2>
           </div>
 
@@ -120,8 +123,8 @@ const Reports = {
       <thead>
         <tr>
           <th>Professor(a)</th>
-          <th>E-mail</th>
-          <th>Aulas Dadas</th>
+          <th>Login</th>
+          <th>Aulas no Mês</th>
           <th>Presenças Totais</th>
           <th>Faltas</th>
           <th>Taxa Média (%)</th>
@@ -129,14 +132,14 @@ const Reports = {
         </tr>
       </thead>
       <tbody>
-        ${professors.map(p => {
+        ${professors.length > 0 ? professors.map(p => {
           const stats = window.store.getMonthlyMetrics(this.selectedMonth, this.selectedYear, p.id);
           const colorRate = stats.rate >= 80 ? '#059669' : stats.rate >= 60 ? '#d97706' : '#dc2626';
 
           return `
             <tr>
               <td class="font-bold">${p.name}</td>
-              <td style="font-size: 0.85rem; color: var(--text-muted);">${p.email}</td>
+              <td><code style="font-size: 0.85rem; color: #0369a1;">${p.email}</code></td>
               <td><strong>${stats.totalClasses}</strong> aulas</td>
               <td><span style="color: var(--success-emerald); font-weight: 800;">${stats.totalPresents}</span></td>
               <td><span style="color: var(--danger-crimson);">${stats.totalAbsents}</span></td>
@@ -148,25 +151,29 @@ const Reports = {
               </td>
             </tr>
           `;
-        }).join('')}
+        }).join('') : `
+          <tr>
+            <td colspan="7" class="text-center text-muted" style="padding: 2rem;">Nenhum professor cadastrado nesta arena.</td>
+          </tr>
+        `}
       </tbody>
     `;
 
-    // 2. Tabela por Arena
+    // 2. Tabela da Arena
     arenaTable.innerHTML = `
       <thead>
         <tr>
           <th>Arena</th>
           <th>Localização</th>
-          <th>Alunos Cadastrados</th>
-          <th>Aulas no Mês</th>
+          <th>Alunos Matriculados</th>
+          <th>Aulas Realizadas</th>
           <th>Presenças</th>
           <th>Frequência Média (%)</th>
         </tr>
       </thead>
       <tbody>
         ${arenas.map(a => {
-          const classesInArena = window.store.state.classes.filter(c => {
+          const classesInArena = window.store.getClasses().filter(c => {
             const d = new Date(c.date + 'T00:00:00');
             return c.arenaId === a.id && (d.getMonth() + 1) === this.selectedMonth && d.getFullYear() === this.selectedYear;
           });

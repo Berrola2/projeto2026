@@ -1,84 +1,84 @@
-# 🏐 Sistema de Gestão de Aulas de Vôlei de Praia
+# 🏐 Sistema de Gestão de Aulas de Vôlei de Praia (SaaS Multi-Arenas)
 
-Aplicação web moderna, ultra-responsiva e otimizada para uso em celulares diretamente nas quadras de areia.
-
----
-
-## 🌟 Principais Funcionalidades
-
-### 1. ⚡ Registro Rápido de Aula (&lt; 1 Minuto no Celular)
-- Seleção imediata de Arena, Turma, Data e Horário.
-- **Chamada com 1-Toque**: Toque no card do aluno para alternar entre `🟢 Presente` e `⚪ Ausente`.
-- Botões de atalho **"Todos Presentes"** e **"Todos Ausentes"**.
-- Contadores em tempo real de presença e taxa de frequência.
-- Captura de foto diretamente da câmera do celular (`accept="image/*"`).
-
-### 2. 📸 Status Visual de Fotos & Lembretes
-- `🟡 FOTO PENDENTE`: Modal de aviso para lembrar o professor de registrar a foto da turma na areia.
-- `🟢 FOTO RECEBIDA`: Foto enviada e pronta para compartilhamento.
-- `🔵 PREPARADO PARA ENVIO`: Status atualizado após o disparo.
-
-### 3. 📲 Integração Direta com WhatsApp
-- Geração automática de link `https://wa.me/?text=...` com mensagem personalizada:
-  > *"Boa noite! Segue a foto da aula de hoje na {Nome_Arena} ({Data}). 🏐📸"*
-- Atualização em tempo real para o status `🔵 PREPARADO`.
-
-### 4. 🛡️ Controle de Acesso por Domínio de E-mail (RBAC)
-- **Professor (`@prof.com`):** Acesso a Meu Painel, Registro Rápido, Chamada e Fechamento do Mês.
-- **Administrador (`@arenaadm.com`):** Acesso ao Painel Geral, Galeria Central de Fotos, Relatórios, Gestão de Alunos, Arenas, Professores e Calendário.
-- Qualquer outro domínio recebe a mensagem: *"Este e-mail não possui permissão para acessar o sistema."*
-
-### 5. 📸 Galeria Central & Lightbox
-- Feed visual de fotos com filtros dinâmicos por Data, Arena, Professor e Turma.
-- Visualizador ampliado (Lightbox) e botão de download.
-
-### 6. 📊 Relatórios Consolidados & Exportação CSV
-- Relatórios por Professor e por Arena.
-- Botão **Exportar CSV** formatado com delimitador `;` e codificação UTF-8 BOM para abertura perfeita no Excel em português.
+Aplicação web moderna, ultra-responsiva e desenvolvida como uma plataforma SaaS para comercialização em múltiplas instituições e arenas de vôlei de praia independentes.
 
 ---
 
-## 🔑 Credenciais Pré-configuradas para Demonstração
+## 🌟 Novidades: Geração Automática de E-mail & Isolamento Multitenant
 
-| Papel | E-mail | Senha | Nome |
+### 1. ⚡ Geração Automática de E-mail / Login
+Ao cadastrar um novo usuário ou professor, o e-mail/login é gerado automaticamente e em tempo real no padrão:
+$$\text{(primeiro\_nome).(arena)@(funcao).com}$$
+
+- **Exemplo 1 (Professor):**
+  - Nome: `Felipe Gabriel`
+  - Arena: `Arena Ilha`
+  - Função: `Professor`
+  - **Login Gerado:** `felipe.ilha@prof.com`
+- **Exemplo 2 (Gestor / Administrador):**
+  - Nome: `Heitor Augusto`
+  - Arena: `Arena Ilha`
+  - Função: `Administrador/Gestor`
+  - **Login Gerado:** `heitor.ilha@adm.com`
+
+---
+
+### 2. 🔒 Segurança & Isolamento Estrito por Arena (Multi-Instituição)
+O sistema conta com regras de segurança para atender a venda para múltiplas instituições:
+- **Gestor da Arena Ilha:** Visualiza **exclusivamente** as aulas, fotos da galeria, relatórios, alunos e professores cadastrados na **Arena Ilha**.
+- **Gestor da Arena Maroka:** Visualiza **apenas** o que os professores da **Arena Maroka** postarem.
+- **Zero Vazamento de Dados:** Usuários de uma arena não têm acesso a fotos, relatórios ou informações de outra arena.
+
+---
+
+## 🔑 Contas Pré-configuradas para Demonstração
+
+### 🏖️ Arena Ilha
+| Papel | E-mail / Login | Senha | Nome |
 | :--- | :--- | :--- | :--- |
-| **Professor** | `carlos@prof.com` | `senha123` | Carlos Silva |
-| **Professora** | `ana@prof.com` | `senha123` | Ana Souza |
-| **Administrador** | `gestor@arenaadm.com` | `senha123` | Roberto Gestor |
-| **Administrador** | `admin@arenaadm.com` | `senha123` | Administrador da Arena |
+| **Gestor / Admin** | `heitor.ilha@adm.com` | `senha123` | Heitor Augusto |
+| **Professor** | `felipe.ilha@prof.com` | `senha123` | Felipe Gabriel |
+
+### 🏖️ Arena Maroka (Isolada)
+| Papel | E-mail / Login | Senha | Nome |
+| :--- | :--- | :--- | :--- |
+| **Gestor / Admin** | `marcos.maroka@adm.com` | `senha123` | Marcos Gestor |
+| **Professor** | `lucas.maroka@prof.com` | `senha123` | Lucas Treinador |
+
+### 🏖️ Outras Arenas
+| Papel | E-mail / Login | Senha | Nome |
+| :--- | :--- | :--- | :--- |
+| **Professor (Ipanema)** | `carlos.ipanema@prof.com` | `senha123` | Carlos Silva |
+| **Professora (Copacabana)** | `ana.copacabana@prof.com` | `senha123` | Ana Souza |
+
+---
+
+## 📱 Recursos Principais
+
+1. **⚡ Registro Rápido de Aula (&lt; 1 Minuto no Celular na Quadra):**
+   - Chamada com 1-toque nos cards dos alunos (`🟢 Presente` / `⚪ Ausente`).
+   - Botões "Todos Presentes" e "Todos Ausentes" com contadores dinâmicos.
+   - Captura de foto direto da câmera do celular.
+2. **📸 Modais de Foto & Disparo no WhatsApp:**
+   - Aviso de foto pendente `🟡 PENDENTE`.
+   - Geração automática de link `https://wa.me/?text=...` com mensagem personalizada da aula.
+   - Atualização para status `🔵 PREPARADO PARA ENVIO`.
+3. **📸 Galeria Central & Lightbox:**
+   - Feed fotográfico filtrado por Data, Professor e Turma (restrito à arena do gestor).
+4. **📊 Relatórios & Exportação CSV:**
+   - Métricas consolidadas por Professor e Arena com download formatado para Excel em português.
 
 ---
 
 ## 🚀 Como Executar
 
-### 1. Online (Vercel / GitHub Pages)
-O projeto é 100% estático e compatível com qualquer plataforma de hospedagem com deploy instantâneo e zero falhas de runtime.
+### 1. Online (Vercel)
+O projeto é 100% estático e otimizado para deploy instantâneo na Vercel com zero erros de runtime ou serverless.
 
 ### 2. Localmente
-Basta abrir o arquivo `index.html` em qualquer navegador ou rodar um servidor web local:
 ```bash
-npx serve .
-# ou
 python -m http.server 3000
+# ou
+npx serve .
 ```
 Acesse `http://localhost:3000`.
-
----
-
-## 📁 Estrutura do Código
-
-```
-├── index.html            # Aplicação SPA completa com todas as telas e modais
-├── css/
-│   ├── style.css         # Design system, tema Vôlei de Praia e layout mobile-first
-│   └── components.css    # Cards touch-friendly de presença, galeria e modais
-├── js/
-│   ├── store.js          # Banco de dados local com seed e persistência reativa
-│   ├── quick-class.js    # Fluxo de chamada em 1-toque e envio de foto
-│   ├── whatsapp.js       # Integração com links wa.me
-│   ├── gallery.js        # Galeria central de fotos e filtros dinâmicos
-│   ├── reports.js        # Relatórios mensais e exportador CSV
-│   └── app.js            # Roteador SPA, modais e navegação
-├── vercel.json           # Configuração de deploy estático
-└── README.md             # Documentação em Português (PT-BR)
-```
